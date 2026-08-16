@@ -1,7 +1,6 @@
 <div align="center">
 
 # ⣿ GLOBAL SCRIPTS ⣿
-### `[ SYSTEM.CORE_OS ]`
 
 *Pure logic. Zero bloat. Nothing else.*
 
@@ -44,7 +43,7 @@ Execute the corresponding loader in your environment. Our **Cloud Asset Manager*
 loadstring(game:HttpGet("[https://raw.githubusercontent.com/GlobalScriptsDevelopment/Scripts/refs/heads/main/Games/Uploaded/Feed%20Your%20Teto](https://raw.githubusercontent.com/GlobalScriptsDevelopment/Scripts/refs/heads/main/Games/Uploaded/Feed%20Your%20Teto)!"))()
 ```
 
-» Math Race Tower
+### `»Math Race Tower`
 
 ```Lua
 loadstring(game:HttpGet("[https://raw.githubusercontent.com/GlobalScriptsDevelopment/Scripts/refs/heads/main/Games/Uploaded/Math%20Race%20Tower](https://raw.githubusercontent.com/GlobalScriptsDevelopment/Scripts/refs/heads/main/Games/Uploaded/Math%20Race%20Tower)"))()

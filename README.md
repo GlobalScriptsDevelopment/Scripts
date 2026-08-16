@@ -42,10 +42,16 @@ Execute the corresponding loader in your environment. Our **Cloud Asset Manager*
 ### `» Feed Your Teto!`
 ```lua
 loadstring(game:HttpGet("[https://raw.githubusercontent.com/GlobalScriptsDevelopment/Scripts/refs/heads/main/Games/Uploaded/Feed%20Your%20Teto](https://raw.githubusercontent.com/GlobalScriptsDevelopment/Scripts/refs/heads/main/Games/Uploaded/Feed%20Your%20Teto)!"))()
+```
+
 » Math Race Tower
-Lua
+
+```Lua
 loadstring(game:HttpGet("[https://raw.githubusercontent.com/GlobalScriptsDevelopment/Scripts/refs/heads/main/Games/Uploaded/Math%20Race%20Tower](https://raw.githubusercontent.com/GlobalScriptsDevelopment/Scripts/refs/heads/main/Games/Uploaded/Math%20Race%20Tower)"))()
+```
+
 ⋮ SYSTEM_ARCHITECTURE
+
 [ 01 ] Asset Management ⠂ Cloud-based UI asset downloading.
 
 [ 02 ] Heuristic Routing ⠂ Smart environment verification and validation.

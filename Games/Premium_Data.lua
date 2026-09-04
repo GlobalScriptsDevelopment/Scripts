@@ -9,7 +9,7 @@ local PremiumDatabase = {
     -- List of authorized Premium users by their Roblox UserId
     Players = {
         [80349677404572] = { Status = true, Role = "Owner" }, -- Replace with your actual UserId
-        [123456789] = { Status = true, Role = "Premium User" },
+        [10104009628] = { Status = true, Role = "Premium User" },
         [987654321] = { Status = true, Role = "Tester" }
     }
 }

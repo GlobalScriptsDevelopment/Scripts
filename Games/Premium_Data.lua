@@ -23,23 +23,22 @@ An attempt was made to compromise the script, or the script key was empty.
     -- [[ 2. ОСНОВНАЯ ФУНКЦИЯ СКРИПТА ]] --
     local function TheScript()
         -- Создаем категорию во вкладке Home, используя переданный Env
-        local WelcomeSection = Env.TabHome:CreateSection("Welcome Category")
+        local HomeTab = Env.TabHome
+        local UpdatesTab = Env.TabUpdates
+        local TabGames = Env.TabGames
+        local TabVisual = Env.Visual
+        local TabMisc = Env.TabMiscellaneous
+        local TabConfig = Env.TabConfigurator
+        local TabSettings = Env.TabSettings
         
-        Env.TabHome:CreateParagraph({
-            Title = "Authentication Successful",
-            Content = "Script securely loaded from GitHub. Welcome to Global Scripts Hub, " .. LocalPlayer.Name .. "!"
+        -- [[ Home Tab ]] --
+        HomeTab:CreateDivider({ line = true, spacing = 12 })
+        HomeTab:CreateSection({ name = "Profile", icon = "" })
+        HomeTab:CreateText({
+            name = "Your Plan: Free",
+            text = "All common functions.",
         })
-
-        Env.TabHome:CreateButton({
-            Name = "Test Function",
-            Callback = function()
-                print("[Global Scripts]: Key matched. Functions are fully operational.")
-            end,
-        })
-
-        -- Здесь ты можешь продолжать строить UI в других вкладках:
-        -- local VisualSection = Env.TabVisual:CreateSection("ESP Settings")
-        -- ...
+        
     end
 
     -- [[ 3. ЗАПУСК ]] --

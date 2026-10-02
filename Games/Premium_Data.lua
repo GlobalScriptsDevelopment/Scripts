@@ -11,7 +11,6 @@ return function(Env, PassedKey)
     local RunService = game:GetService("RunService")
     local CoreGui = game:GetService("CoreGui")
     local MarketplaceService = game:GetService("MarketplaceService")
-    local Stats = game:GetService("Stats")
     
     local LocalPlayer = Players.LocalPlayer
     local Camera = workspace.CurrentCamera
@@ -38,8 +37,8 @@ return function(Env, PassedKey)
             RainbowMode = false,
             RainbowSpeed = 1
         },
-        Connections = {}, -- Для хранения эвентов, чтобы их можно было выгрузить (Unload)
-        Objects = {}      -- Для хранения элементов Drawing
+        Connections = {},
+        Objects = {}
     }
 
     -- [[ 4. СБОР ИНФОРМАЦИИ ОБ ОКРУЖЕНИИ ]]
@@ -50,6 +49,8 @@ return function(Env, PassedKey)
     -- [[ 5. ЯДРО ИНТЕРФЕЙСА ]]
     local function TheScript()
         local Window = Env.Window
+        local GetIcon = Env.GetIcon -- Получаем функцию кастомных иконок из Лоадера
+        
         local HomeTab = Env.TabHome
         local UpdatesTab = Env.TabUpdates
         local VisualTab = Env.TabVisual
@@ -59,24 +60,26 @@ return function(Env, PassedKey)
         -- 🏠 ВКЛАДКА: HOME
         -- ==========================================
         HomeTab:CreateDivider({ line = true, spacing = 10 })
-        HomeTab:CreateSection({ name = "User Information" })
+        HomeTab:CreateSection({ name = "User Information", icon = GetIcon("SectionInfo.png") })
         HomeTab:CreateDivider({ line = false, spacing = 2 })
         
         HomeTab:CreateText({
             name = "👤 Profile: " .. LocalPlayer.Name,
-            text = "Subscription Plan: Premium\nStatus: Authenticated & Secure."
+            text = "Subscription Plan: Premium\nStatus: Authenticated & Secure.",
+            icon = GetIcon("TextInfo.png")
         })
         
         HomeTab:CreateDivider({ line = true, spacing = 4 })
         
         HomeTab:CreateText({
             name = "💻 System Info",
-            text = "Executor: " .. executorName .. "\nCurrent Game: " .. gameName .. "\nPlace ID: " .. tostring(game.PlaceId)
+            text = "Executor: " .. executorName .. "\nCurrent Game: " .. gameName .. "\nPlace ID: " .. tostring(game.PlaceId),
+            icon = GetIcon("TextSafe.png")
         })
 
         HomeTab:CreateDivider({ line = true, spacing = 6 })
 
-        HomeTab:CreateSection({ name = "Quick Actions" })
+        HomeTab:CreateSection({ name = "Quick Actions", icon = GetIcon("Teleport.png") })
         HomeTab:CreateDivider({ line = false, spacing = 2 })
         
         HomeTab:CreateButton({
@@ -93,7 +96,12 @@ return function(Env, PassedKey)
             callback = function()
                 if setclipboard then
                     setclipboard("https://discord.gg/your_invite_code")
-                    Window:Notify({title = "Copied!", content = "Discord invite copied to clipboard.", duration = 3, icon = ""})
+                    Window:Notify({
+                        title = "Copied!", 
+                        content = "Discord invite copied to clipboard.", 
+                        duration = 3, 
+                        icon = GetIcon("NotifyCheck.png")
+                    })
                 end
             end
         })
@@ -102,19 +110,28 @@ return function(Env, PassedKey)
         -- 🔔 ВКЛАДКА: UPDATES
         -- ==========================================
         UpdatesTab:CreateDivider({ line = true, spacing = 10 })
-        UpdatesTab:CreateSection({ name = "Latest Version: v1.2.0" })
+        UpdatesTab:CreateSection({ name = "Latest Version: v1.2.0", icon = GetIcon("VersionToast.png") })
         UpdatesTab:CreateDivider({ line = false, spacing = 2 })
 
         UpdatesTab:CreateText({
             name = "Patch Notes - October 2026",
-            text = "✔️ Fixed CreateSection strict syntax\n✔️ Added Script Unload & UI Keybinds\n✔️ Added Rainbow ESP with Speed Slider\n✔️ Reduced UI Spacing for a cleaner look\n✔️ Smooth Fade In/Out for ESP Engine"
+            text = "✔️ Implemented Custom Local Asset Manager\n✔️ Added Script Unload & UI Keybinds\n✔️ Added Rainbow ESP with Speed Slider\n✔️ Reduced UI Spacing for a cleaner look",
+            icon = GetIcon("TextSafe.png")
+        })
+
+        UpdatesTab:CreateDivider({ line = true, spacing = 6 })
+
+        UpdatesTab:CreateText({
+            name = "Upcoming Features",
+            text = "🔜 Server Hop (Low Ping Matchmaking)\n🔜 Aimbot & FOV Circle\n🔜 AutoFarm Categories",
+            icon = GetIcon("TextWarning.png")
         })
 
         -- ==========================================
         -- 👁️ ВКЛАДКА: VISUAL (ESP)
         -- ==========================================
         VisualTab:CreateDivider({ line = true, spacing = 10 })
-        VisualTab:CreateSection({ name = "Main Settings" })
+        VisualTab:CreateSection({ name = "Main Settings", icon = GetIcon("Settings.png") })
         VisualTab:CreateDivider({ line = false, spacing = 2 })
 
         VisualTab:CreateToggle({
@@ -158,7 +175,7 @@ return function(Env, PassedKey)
         })
 
         VisualTab:CreateDivider({ line = true, spacing = 6 })
-        VisualTab:CreateSection({ name = "Colors & Rainbow" })
+        VisualTab:CreateSection({ name = "Colors & Rainbow", icon = GetIcon("Visual.png") })
         VisualTab:CreateDivider({ line = false, spacing = 2 })
 
         VisualTab:CreateToggle({
@@ -212,10 +229,10 @@ return function(Env, PassedKey)
         })
 
         -- ==========================================
-        -- ⚙️ ВКЛАДКА: SETTINGS (НАСТРОЙКИ СКРИПТА)
+        -- ⚙️ ВКЛАДКА: SETTINGS
         -- ==========================================
         SettingsTab:CreateDivider({ line = true, spacing = 10 })
-        SettingsTab:CreateSection({ name = "Menu Configuration" })
+        SettingsTab:CreateSection({ name = "Menu Configuration", icon = GetIcon("Settings.png") })
         SettingsTab:CreateDivider({ line = false, spacing = 2 })
 
         SettingsTab:CreateKeybind({
@@ -224,40 +241,39 @@ return function(Env, PassedKey)
             holdToInteract = false,
             flag = "UIToggleBind",
             callback = function(Keybind)
-                -- Встроенная функция Rayfield для скрытия/показа меню (если поддерживается)
-                -- Либо можно оставить пустой коллбэк, Rayfield часто биндит это сам внутри ядра
+                -- Rayfield handles toggle automatically if bound
             end
         })
 
         SettingsTab:CreateDivider({ line = true, spacing = 10 })
-        SettingsTab:CreateSection({ name = "Script Management" })
+        SettingsTab:CreateSection({ name = "Script Management", icon = GetIcon("SectionWarning.png") })
         SettingsTab:CreateDivider({ line = false, spacing = 2 })
 
         SettingsTab:CreateButton({
             name = "⚠️ Unload Script",
             callback = function()
-                -- Удаляем все линии и текст
                 for _, obj in pairs(GlobalState.Objects) do
                     if obj.Tracer then obj.Tracer:Remove() end
                     if obj.Text then obj.Text:Remove() end
                 end
-                -- Очищаем хайлайты
                 for _, v in pairs(CoreGui:GetChildren()) do
                     if v.Name:match("^GlobalGlow_") then v:Destroy() end
                 end
-                -- Отключаем все циклы
                 for _, connection in pairs(GlobalState.Connections) do
                     connection:Disconnect()
                 end
-                -- Уничтожаем интерфейс Rayfield
-                Rayfield:Destroy()
+                Env.Window:Notify({
+                    title = "Unloaded", 
+                    content = "Global Scripts has been safely unloaded.", 
+                    duration = 3, 
+                    icon = GetIcon("NotifyCheck.png")
+                })
             end
         })
 
         -- ==========================================
         -- 🧠 ДВИЖОК ОТРИСОВКИ (SMOOTH DRAWING API)
         -- ==========================================
-        
         local function GetESPObjects(player)
             if not GlobalState.Objects[player] then
                 GlobalState.Objects[player] = {
@@ -286,7 +302,6 @@ return function(Env, PassedKey)
                 glow.Adornee = character
                 glow.FillColor = currentColor
                 glow.OutlineColor = Color3.fromRGB(255, 255, 255)
-                
                 glow.FillTransparency = 1 - (0.5 * targetAlpha)
                 glow.OutlineTransparency = 1 - (0.9 * targetAlpha)
             else
@@ -294,7 +309,6 @@ return function(Env, PassedKey)
             end
         end
 
-        -- Основной цикл рендера
         local renderConnection = RunService.RenderStepped:Connect(function()
             local currentRainbowColor = Color3.fromHSV((tick() * GlobalState.ESP.RainbowSpeed * 0.2) % 1, 1, 1)
 
@@ -319,19 +333,15 @@ return function(Env, PassedKey)
                         end
                     end
 
-                    -- Плавность (Lerp)
                     local targetAlpha = isVisible and 1 or 0
                     objs.Alpha = objs.Alpha + (targetAlpha - objs.Alpha) * GlobalState.ESP.FadeSpeed
 
-                    -- Отрисовка Glow
                     local activeGlowColor = GlobalState.ESP.RainbowMode and currentRainbowColor or GlobalState.ESP.GlowColor
                     local glowTargetAlpha = (GlobalState.ESP.Glow and GlobalState.ESP.Master and character and character:FindFirstChild("Humanoid") and character.Humanoid.Health > 0) and 1 or 0
                     ManageGlow(player, character, glowTargetAlpha, activeGlowColor)
 
-                    -- Отрисовка Drawing API
                     if objs.Alpha > 0.01 and Vector and HeadVector then
                         
-                        -- Трейсеры
                         if GlobalState.ESP.Tracers then
                             objs.Tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
                             objs.Tracer.To = Vector2.new(Vector.X, Vector.Y)
@@ -342,7 +352,6 @@ return function(Env, PassedKey)
                             objs.Tracer.Visible = false
                         end
 
-                        -- Текст
                         if GlobalState.ESP.Style ~= "Disabled" then
                             local hum = character:FindFirstChild("Humanoid")
                             local hrp = character:FindFirstChild("HumanoidRootPart")
@@ -363,7 +372,6 @@ return function(Env, PassedKey)
                         else
                             objs.Text.Visible = false
                         end
-                        
                     else
                         objs.Tracer.Visible = false
                         objs.Text.Visible = false
@@ -372,7 +380,6 @@ return function(Env, PassedKey)
             end
         end)
 
-        -- Добавляем коннекшн в память, чтобы скрипт мог остановить его при нажатии Unload
         table.insert(GlobalState.Connections, renderConnection)
 
         local playerRemovingConnection = Players.PlayerRemoving:Connect(function(player)
@@ -386,7 +393,6 @@ return function(Env, PassedKey)
         end)
         
         table.insert(GlobalState.Connections, playerRemovingConnection)
-
     end
 
     -- [[ 6. ЗАПУСК ]] --

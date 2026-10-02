@@ -1,57 +1,65 @@
--- [[ Payload Script | Global Scripts Development ]] --
--- Возвращаем функцию, которую вызовет Лоадер
+-- ==============================================================================
+-- [[ GLOBAL SCRIPTS DEVELOPMENT ]]
+-- Project: Universal Hub (Payload)
+-- Engine: Rayfield Gen 2
+-- Version: 1.2.0 (Stable)
+-- ==============================================================================
 
 return function(Env, PassedKey)
+    -- [[ 1. СИСТЕМНЫЕ СЕРВИСЫ ]]
     local Players = game:GetService("Players")
     local RunService = game:GetService("RunService")
     local CoreGui = game:GetService("CoreGui")
     local MarketplaceService = game:GetService("MarketplaceService")
+    local Stats = game:GetService("Stats")
     
     local LocalPlayer = Players.LocalPlayer
     local Camera = workspace.CurrentCamera
 
-    -- Наш настоящий ключ
+    -- [[ 2. АУТЕНТИФИКАЦИЯ (HANDSHAKE) ]]
     local ExpectedKey = "Global-Scripts-2026-Gen2-2fhjg42cmb053nffas"
 
-    -- [[ 1. ПРОВЕРКА КЛЮЧА ]] --
     if PassedKey ~= ExpectedKey then
         LocalPlayer:Kick("\n[Global Scripts]\nInvalid Authentication Key.\nNice try, but you are not authorized.")
         return
     end
 
-    -- [[ 2. ГЛОБАЛЬНЫЕ НАСТРОЙКИ И ДАННЫЕ ]] --
-    local ESPSettings = {
-        Master = false,
-        Tracers = false,
-        Style = "Health & Meters", 
-        Glow = false,
-        -- Цвета
-        TracerColor = Color3.fromRGB(255, 255, 255),
-        TextColor = Color3.fromRGB(255, 255, 255),
-        GlowColor = Color3.fromRGB(0, 242, 254),
-        FadeSpeed = 0.1,
-        -- Радуга
-        RainbowMode = false,
-        RainbowSpeed = 1
+    -- [[ 3. ГЛОБАЛЬНАЯ БАЗА ДАННЫХ (STATE) ]]
+    local GlobalState = {
+        ESP = {
+            Master = false,
+            Tracers = false,
+            Style = "Health & Meters", 
+            Glow = false,
+            TracerColor = Color3.fromRGB(255, 255, 255),
+            TextColor = Color3.fromRGB(255, 255, 255),
+            GlowColor = Color3.fromRGB(0, 242, 254),
+            FadeSpeed = 0.1,
+            RainbowMode = false,
+            RainbowSpeed = 1
+        },
+        Connections = {}, -- Для хранения эвентов, чтобы их можно было выгрузить (Unload)
+        Objects = {}      -- Для хранения элементов Drawing
     }
 
-    local ESP_Objects = {}
-
+    -- [[ 4. СБОР ИНФОРМАЦИИ ОБ ОКРУЖЕНИИ ]]
     local executorName = type(identifyexecutor) == "function" and identifyexecutor() or "Unknown Executor"
     local gameName = "Loading..."
     pcall(function() gameName = MarketplaceService:GetProductInfo(game.PlaceId).Name end)
 
-    -- [[ 3. ОСНОВНАЯ ФУНКЦИЯ СКРИПТА ]] --
+    -- [[ 5. ЯДРО ИНТЕРФЕЙСА ]]
     local function TheScript()
+        local Window = Env.Window
         local HomeTab = Env.TabHome
         local UpdatesTab = Env.TabUpdates
         local VisualTab = Env.TabVisual
-        local Window = Env.Window
+        local SettingsTab = Env.TabSettings
 
         -- ==========================================
         -- 🏠 ВКЛАДКА: HOME
         -- ==========================================
-        HomeTab:CreateSection("User Information")
+        HomeTab:CreateDivider({ line = true, spacing = 10 })
+        HomeTab:CreateSection({ name = "User Information" })
         HomeTab:CreateDivider({ line = false, spacing = 2 })
         
         HomeTab:CreateText({
@@ -68,7 +76,7 @@ return function(Env, PassedKey)
 
         HomeTab:CreateDivider({ line = true, spacing = 6 })
 
-        HomeTab:CreateSection("Quick Actions")
+        HomeTab:CreateSection({ name = "Quick Actions" })
         HomeTab:CreateDivider({ line = false, spacing = 2 })
         
         HomeTab:CreateButton({
@@ -93,18 +101,20 @@ return function(Env, PassedKey)
         -- ==========================================
         -- 🔔 ВКЛАДКА: UPDATES
         -- ==========================================
-        UpdatesTab:CreateSection("Latest Version: v1.2.0")
+        UpdatesTab:CreateDivider({ line = true, spacing = 10 })
+        UpdatesTab:CreateSection({ name = "Latest Version: v1.2.0" })
         UpdatesTab:CreateDivider({ line = false, spacing = 2 })
 
         UpdatesTab:CreateText({
             name = "Patch Notes - October 2026",
-            text = "✔️ Added Rainbow ESP with Speed Slider\n✔️ Reduced UI Spacing for a cleaner look\n✔️ Added Liquid Node Visuals (Drawing API)\n✔️ Added Smooth Fade In/Out for ESP"
+            text = "✔️ Fixed CreateSection strict syntax\n✔️ Added Script Unload & UI Keybinds\n✔️ Added Rainbow ESP with Speed Slider\n✔️ Reduced UI Spacing for a cleaner look\n✔️ Smooth Fade In/Out for ESP Engine"
         })
 
         -- ==========================================
         -- 👁️ ВКЛАДКА: VISUAL (ESP)
         -- ==========================================
-        VisualTab:CreateSection("Main Settings")
+        VisualTab:CreateDivider({ line = true, spacing = 10 })
+        VisualTab:CreateSection({ name = "Main Settings" })
         VisualTab:CreateDivider({ line = false, spacing = 2 })
 
         VisualTab:CreateToggle({
@@ -112,7 +122,7 @@ return function(Env, PassedKey)
             currentValue = false,
             flag = "EspMaster",
             callback = function(Value)
-                ESPSettings.Master = Value
+                GlobalState.ESP.Master = Value
             end
         })
 
@@ -123,7 +133,7 @@ return function(Env, PassedKey)
             currentValue = false,
             flag = "EspTracers",
             callback = function(Value)
-                ESPSettings.Tracers = Value
+                GlobalState.ESP.Tracers = Value
             end
         })
 
@@ -134,7 +144,7 @@ return function(Env, PassedKey)
             multipleOptions = false,
             flag = "EspStyle",
             callback = function(Option)
-                ESPSettings.Style = type(Option) == "table" and Option[1] or Option
+                GlobalState.ESP.Style = type(Option) == "table" and Option[1] or Option
             end
         })
 
@@ -143,25 +153,23 @@ return function(Env, PassedKey)
             currentValue = false,
             flag = "EspGlow",
             callback = function(Value)
-                ESPSettings.Glow = Value
+                GlobalState.ESP.Glow = Value
             end
         })
 
         VisualTab:CreateDivider({ line = true, spacing = 6 })
-        VisualTab:CreateSection("Colors & Rainbow")
+        VisualTab:CreateSection({ name = "Colors & Rainbow" })
         VisualTab:CreateDivider({ line = false, spacing = 2 })
 
-        -- Радужный режим
         VisualTab:CreateToggle({
             name = "Enable Rainbow ESP",
             currentValue = false,
             flag = "EspRainbow",
             callback = function(Value)
-                ESPSettings.RainbowMode = Value
+                GlobalState.ESP.RainbowMode = Value
             end
         })
 
-        -- Слайдер скорости радуги
         VisualTab:CreateSlider({
             name = "Rainbow Speed",
             range = {0.1, 5},
@@ -170,7 +178,7 @@ return function(Env, PassedKey)
             currentValue = 1,
             flag = "EspRainbowSpeed",
             callback = function(Value)
-                ESPSettings.RainbowSpeed = Value
+                GlobalState.ESP.RainbowSpeed = Value
             end
         })
 
@@ -178,48 +186,91 @@ return function(Env, PassedKey)
 
         VisualTab:CreateColorPicker({
             name = "Tracer Color",
-            color = ESPSettings.TracerColor,
+            color = GlobalState.ESP.TracerColor,
             flag = "TracerColorPicker",
             callback = function(color, alpha)
-                ESPSettings.TracerColor = color
+                GlobalState.ESP.TracerColor = color
             end
         })
 
         VisualTab:CreateColorPicker({
             name = "Text Color",
-            color = ESPSettings.TextColor,
+            color = GlobalState.ESP.TextColor,
             flag = "TextColorPicker",
             callback = function(color, alpha)
-                ESPSettings.TextColor = color
+                GlobalState.ESP.TextColor = color
             end
         })
 
         VisualTab:CreateColorPicker({
             name = "Glow Color",
-            color = ESPSettings.GlowColor,
+            color = GlobalState.ESP.GlowColor,
             flag = "GlowColorPicker",
             callback = function(color, alpha)
-                ESPSettings.GlowColor = color
+                GlobalState.ESP.GlowColor = color
             end
         })
 
         -- ==========================================
-        -- ⚙️ ДВИЖОК ОТРИСОВКИ (SMOOTH DRAWING API)
+        -- ⚙️ ВКЛАДКА: SETTINGS (НАСТРОЙКИ СКРИПТА)
+        -- ==========================================
+        SettingsTab:CreateDivider({ line = true, spacing = 10 })
+        SettingsTab:CreateSection({ name = "Menu Configuration" })
+        SettingsTab:CreateDivider({ line = false, spacing = 2 })
+
+        SettingsTab:CreateKeybind({
+            name = "Toggle Menu UI",
+            currentKeybind = "RightShift",
+            holdToInteract = false,
+            flag = "UIToggleBind",
+            callback = function(Keybind)
+                -- Встроенная функция Rayfield для скрытия/показа меню (если поддерживается)
+                -- Либо можно оставить пустой коллбэк, Rayfield часто биндит это сам внутри ядра
+            end
+        })
+
+        SettingsTab:CreateDivider({ line = true, spacing = 10 })
+        SettingsTab:CreateSection({ name = "Script Management" })
+        SettingsTab:CreateDivider({ line = false, spacing = 2 })
+
+        SettingsTab:CreateButton({
+            name = "⚠️ Unload Script",
+            callback = function()
+                -- Удаляем все линии и текст
+                for _, obj in pairs(GlobalState.Objects) do
+                    if obj.Tracer then obj.Tracer:Remove() end
+                    if obj.Text then obj.Text:Remove() end
+                end
+                -- Очищаем хайлайты
+                for _, v in pairs(CoreGui:GetChildren()) do
+                    if v.Name:match("^GlobalGlow_") then v:Destroy() end
+                end
+                -- Отключаем все циклы
+                for _, connection in pairs(GlobalState.Connections) do
+                    connection:Disconnect()
+                end
+                -- Уничтожаем интерфейс Rayfield
+                Rayfield:Destroy()
+            end
+        })
+
+        -- ==========================================
+        -- 🧠 ДВИЖОК ОТРИСОВКИ (SMOOTH DRAWING API)
         -- ==========================================
         
         local function GetESPObjects(player)
-            if not ESP_Objects[player] then
-                ESP_Objects[player] = {
+            if not GlobalState.Objects[player] then
+                GlobalState.Objects[player] = {
                     Tracer = Drawing.new("Line"),
                     Text = Drawing.new("Text"),
                     Alpha = 0
                 }
-                ESP_Objects[player].Tracer.Thickness = 1.5
-                ESP_Objects[player].Text.Size = 16
-                ESP_Objects[player].Text.Center = true
-                ESP_Objects[player].Text.Outline = true
+                GlobalState.Objects[player].Tracer.Thickness = 1.5
+                GlobalState.Objects[player].Text.Size = 16
+                GlobalState.Objects[player].Text.Center = true
+                GlobalState.Objects[player].Text.Outline = true
             end
-            return ESP_Objects[player]
+            return GlobalState.Objects[player]
         end
 
         local function ManageGlow(player, character, targetAlpha, currentColor)
@@ -244,9 +295,8 @@ return function(Env, PassedKey)
         end
 
         -- Основной цикл рендера
-        RunService.RenderStepped:Connect(function()
-            -- Генерация текущего цвета радуги на основе времени
-            local currentRainbowColor = Color3.fromHSV((tick() * ESPSettings.RainbowSpeed * 0.2) % 1, 1, 1)
+        local renderConnection = RunService.RenderStepped:Connect(function()
+            local currentRainbowColor = Color3.fromHSV((tick() * GlobalState.ESP.RainbowSpeed * 0.2) % 1, 1, 1)
 
             for _, player in pairs(Players:GetPlayers()) do
                 if player ~= LocalPlayer then
@@ -256,7 +306,7 @@ return function(Env, PassedKey)
                     local isVisible = false
                     local Vector, HeadVector
 
-                    if ESPSettings.Master and character and character:FindFirstChild("HumanoidRootPart") and character:FindFirstChild("Humanoid") and character.Humanoid.Health > 0 then
+                    if GlobalState.ESP.Master and character and character:FindFirstChild("HumanoidRootPart") and character:FindFirstChild("Humanoid") and character.Humanoid.Health > 0 then
                         local hrp = character.HumanoidRootPart
                         local head = character:FindFirstChild("Head")
                         
@@ -271,40 +321,40 @@ return function(Env, PassedKey)
 
                     -- Плавность (Lerp)
                     local targetAlpha = isVisible and 1 or 0
-                    objs.Alpha = objs.Alpha + (targetAlpha - objs.Alpha) * ESPSettings.FadeSpeed
+                    objs.Alpha = objs.Alpha + (targetAlpha - objs.Alpha) * GlobalState.ESP.FadeSpeed
 
-                    -- Цвет свечения (Выбираем между радугой и кастомным цветом)
-                    local activeGlowColor = ESPSettings.RainbowMode and currentRainbowColor or ESPSettings.GlowColor
-                    local glowTargetAlpha = (ESPSettings.Glow and ESPSettings.Master and character and character:FindFirstChild("Humanoid") and character.Humanoid.Health > 0) and 1 or 0
+                    -- Отрисовка Glow
+                    local activeGlowColor = GlobalState.ESP.RainbowMode and currentRainbowColor or GlobalState.ESP.GlowColor
+                    local glowTargetAlpha = (GlobalState.ESP.Glow and GlobalState.ESP.Master and character and character:FindFirstChild("Humanoid") and character.Humanoid.Health > 0) and 1 or 0
                     ManageGlow(player, character, glowTargetAlpha, activeGlowColor)
 
+                    -- Отрисовка Drawing API
                     if objs.Alpha > 0.01 and Vector and HeadVector then
                         
-                        -- ТРЕЙСЕРЫ
-                        if ESPSettings.Tracers then
+                        -- Трейсеры
+                        if GlobalState.ESP.Tracers then
                             objs.Tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
                             objs.Tracer.To = Vector2.new(Vector.X, Vector.Y)
-                            objs.Tracer.Color = ESPSettings.RainbowMode and currentRainbowColor or ESPSettings.TracerColor
+                            objs.Tracer.Color = GlobalState.ESP.RainbowMode and currentRainbowColor or GlobalState.ESP.TracerColor
                             objs.Tracer.Transparency = objs.Alpha * 0.8
                             objs.Tracer.Visible = true
                         else
                             objs.Tracer.Visible = false
                         end
 
-                        -- ТЕКСТ
-                        if ESPSettings.Style ~= "Disabled" then
+                        -- Текст
+                        if GlobalState.ESP.Style ~= "Disabled" then
                             local hum = character:FindFirstChild("Humanoid")
                             local hrp = character:FindFirstChild("HumanoidRootPart")
                             local dist = math.floor((Camera.CFrame.Position - hrp.Position).Magnitude)
                             
-                            if ESPSettings.Style == "Health & Meters" and hum then
+                            if GlobalState.ESP.Style == "Health & Meters" and hum then
                                 local hp = math.floor(hum.Health)
                                 objs.Text.Text = string.format("%s [%d HP] [%dm]", player.Name, hp, dist)
-                                -- Если включена радуга — перекрашиваем в радугу, иначе показываем цвет по здоровью
-                                objs.Text.Color = ESPSettings.RainbowMode and currentRainbowColor or Color3.fromRGB(255 - (hp * 2.55), hp * 2.55, 0)
-                            elseif ESPSettings.Style == "Names Only" then
+                                objs.Text.Color = GlobalState.ESP.RainbowMode and currentRainbowColor or Color3.fromRGB(255 - (hp * 2.55), hp * 2.55, 0)
+                            elseif GlobalState.ESP.Style == "Names Only" then
                                 objs.Text.Text = player.Name
-                                objs.Text.Color = ESPSettings.RainbowMode and currentRainbowColor or ESPSettings.TextColor
+                                objs.Text.Color = GlobalState.ESP.RainbowMode and currentRainbowColor or GlobalState.ESP.TextColor
                             end
 
                             objs.Text.Position = Vector2.new(HeadVector.X, HeadVector.Y - 25)
@@ -315,7 +365,6 @@ return function(Env, PassedKey)
                         end
                         
                     else
-                        -- Оптимизация: прячем объекты, если прозрачность нулевая
                         objs.Tracer.Visible = false
                         objs.Text.Visible = false
                     end
@@ -323,20 +372,24 @@ return function(Env, PassedKey)
             end
         end)
 
-        -- Очистка кэша (Предотвращает падения FPS при выходе игроков)
-        Players.PlayerRemoving:Connect(function(player)
-            if ESP_Objects[player] then
-                ESP_Objects[player].Tracer:Remove()
-                ESP_Objects[player].Text:Remove()
-                ESP_Objects[player] = nil
+        -- Добавляем коннекшн в память, чтобы скрипт мог остановить его при нажатии Unload
+        table.insert(GlobalState.Connections, renderConnection)
+
+        local playerRemovingConnection = Players.PlayerRemoving:Connect(function(player)
+            if GlobalState.Objects[player] then
+                GlobalState.Objects[player].Tracer:Remove()
+                GlobalState.Objects[player].Text:Remove()
+                GlobalState.Objects[player] = nil
             end
             local glow = CoreGui:FindFirstChild("GlobalGlow_" .. player.Name)
             if glow then glow:Destroy() end
         end)
+        
+        table.insert(GlobalState.Connections, playerRemovingConnection)
 
     end
 
-    -- [[ 4. ЗАПУСК ]] --
+    -- [[ 6. ЗАПУСК ]] --
     TheScript()
 
 end

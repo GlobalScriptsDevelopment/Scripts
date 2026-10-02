@@ -2,7 +2,7 @@
 -- [[ GLOBAL SCRIPTS DEVELOPMENT ]]
 -- Project: Universal Hub (Payload)
 -- Engine: Rayfield Gen 2
--- Version: 1.3.0 (Aimbot & Unload Update)
+-- Version: 1.4.0 (Misc Aimbot + Player Mods)
 -- ==============================================================================
 
 return function(Env, PassedKey)
@@ -38,7 +38,7 @@ return function(Env, PassedKey)
         },
         Aim = {
             Enabled = false,
-            ShowFOV = true,
+            ShowFOV = false,     -- по умолчанию выключен
             FOV = 120,
             Smooth = 25,
             MaxDist = 500,
@@ -49,6 +49,16 @@ return function(Env, PassedKey)
             TeamCheck = true,
             ToggleKey = false,
             Holding = false
+        },
+        PlayerMods = {
+            Speed = 16,
+            JumpPower = 50,
+            Gravity = 196.2,
+            TargetFOV = 70,
+            LoopSpeed = false,
+            LoopJump = false,
+            LoopGravity = false,
+            SmoothFOV = true
         },
         Connections = {},
         Objects = {}
@@ -65,11 +75,11 @@ return function(Env, PassedKey)
         local HomeTab = Env.TabHome
         local UpdatesTab = Env.TabUpdates
         local VisualTab = Env.TabVisual
-        local AimTab = Env.TabAim
+        local MiscTab = Env.TabMiscellaneous
         local SettingsTab = Env.TabSettings
 
         -- ==========================================
-        -- 🏠 ВКЛАДКА: HOME
+        -- 🏠 HOME
         -- ==========================================
         HomeTab:CreateDivider({ line = true, spacing = 10 })
         HomeTab:CreateSection({ name = "User Information", icon = GetIcon("SectionInfo.png") })
@@ -119,15 +129,15 @@ return function(Env, PassedKey)
         })
 
         -- ==========================================
-        -- 🔔 ВКЛАДКА: UPDATES
+        -- 🔔 UPDATES
         -- ==========================================
         UpdatesTab:CreateDivider({ line = true, spacing = 10 })
-        UpdatesTab:CreateSection({ name = "Latest Version: v1.3.0", icon = GetIcon("VersionToast.png") })
+        UpdatesTab:CreateSection({ name = "Latest Version: v1.4.0", icon = GetIcon("VersionToast.png") })
         UpdatesTab:CreateDivider({ line = false, spacing = 2 })
 
         UpdatesTab:CreateText({
-            name = "Patch Notes - October 2026",
-            text = "Added Smooth Aimbot with FOV Circle\nAdded Multiple Target Selection\nAdded Config Tab Icon\nFixed Safe UI Unload Sequence\nRemoved text emojis in favor of custom PNGs",
+            name = "Patch Notes",
+            text = "Aimbot moved to Miscellaneous\nFOV circle now respects its toggle\nPlayer Modifications (Speed / Jump / Gravity)\nSmooth Camera FOV transition",
             icon = GetIcon("TextSafe.png")
         })
 
@@ -140,7 +150,7 @@ return function(Env, PassedKey)
         })
 
         -- ==========================================
-        -- 👁️ ВКЛАДКА: VISUAL (ESP)
+        -- 👁️ VISUAL (ESP)
         -- ==========================================
         VisualTab:CreateDivider({ line = true, spacing = 10 })
         VisualTab:CreateSection({ name = "Main Settings", icon = GetIcon("Settings.png") })
@@ -150,9 +160,7 @@ return function(Env, PassedKey)
             name = "Master ESP Switch",
             currentValue = false,
             flag = "EspMaster",
-            callback = function(Value)
-                GlobalState.ESP.Master = Value
-            end
+            callback = function(Value) GlobalState.ESP.Master = Value end
         })
 
         VisualTab:CreateDivider({ line = false, spacing = 4 })
@@ -161,9 +169,7 @@ return function(Env, PassedKey)
             name = "Enable Tracers (Lines)",
             currentValue = false,
             flag = "EspTracers",
-            callback = function(Value)
-                GlobalState.ESP.Tracers = Value
-            end
+            callback = function(Value) GlobalState.ESP.Tracers = Value end
         })
 
         VisualTab:CreateDropdown({
@@ -181,9 +187,7 @@ return function(Env, PassedKey)
             name = "Glowing Players (Chams)",
             currentValue = false,
             flag = "EspGlow",
-            callback = function(Value)
-                GlobalState.ESP.Glow = Value
-            end
+            callback = function(Value) GlobalState.ESP.Glow = Value end
         })
 
         VisualTab:CreateDivider({ line = true, spacing = 6 })
@@ -194,9 +198,7 @@ return function(Env, PassedKey)
             name = "Enable Rainbow ESP",
             currentValue = false,
             flag = "EspRainbow",
-            callback = function(Value)
-                GlobalState.ESP.RainbowMode = Value
-            end
+            callback = function(Value) GlobalState.ESP.RainbowMode = Value end
         })
 
         VisualTab:CreateSlider({
@@ -206,9 +208,7 @@ return function(Env, PassedKey)
             suffix = "x",
             currentValue = 1,
             flag = "EspRainbowSpeed",
-            callback = function(Value)
-                GlobalState.ESP.RainbowSpeed = Value
-            end
+            callback = function(Value) GlobalState.ESP.RainbowSpeed = Value end
         })
 
         VisualTab:CreateDivider({ line = false, spacing = 4 })
@@ -217,55 +217,49 @@ return function(Env, PassedKey)
             name = "Tracer Color",
             color = GlobalState.ESP.TracerColor,
             flag = "TracerColorPicker",
-            callback = function(color, alpha)
-                GlobalState.ESP.TracerColor = color
-            end
+            callback = function(color) GlobalState.ESP.TracerColor = color end
         })
 
         VisualTab:CreateColorPicker({
             name = "Text Color",
             color = GlobalState.ESP.TextColor,
             flag = "TextColorPicker",
-            callback = function(color, alpha)
-                GlobalState.ESP.TextColor = color
-            end
+            callback = function(color) GlobalState.ESP.TextColor = color end
         })
 
         VisualTab:CreateColorPicker({
             name = "Glow Color",
             color = GlobalState.ESP.GlowColor,
             flag = "GlowColorPicker",
-            callback = function(color, alpha)
-                GlobalState.ESP.GlowColor = color
-            end
+            callback = function(color) GlobalState.ESP.GlowColor = color end
         })
 
         -- ==========================================
-        -- 🎯 ВКЛАДКА: AIMBOT
+        -- 🎯 MISCELLANEOUS — AIMBOT
         -- ==========================================
-        AimTab:CreateDivider({ line = true, spacing = 10 })
-        AimTab:CreateSection({ name = "Aimbot Settings", icon = GetIcon("Aim.png") })
-        AimTab:CreateDivider({ line = false, spacing = 2 })
+        MiscTab:CreateDivider({ line = true, spacing = 10 })
+        MiscTab:CreateSection({ name = "Aimbot", icon = GetIcon("Aim.png") })
+        MiscTab:CreateDivider({ line = false, spacing = 2 })
 
-        AimTab:CreateToggle({
+        MiscTab:CreateToggle({
             name = "Enable Aimbot",
             currentValue = false,
             flag = "AimEnabled",
             callback = function(v) GlobalState.Aim.Enabled = v end
         })
 
-        AimTab:CreateDivider({ line = false, spacing = 2 })
+        MiscTab:CreateDivider({ line = false, spacing = 2 })
 
-        AimTab:CreateToggle({
+        MiscTab:CreateToggle({
             name = "Show FOV Circle",
-            currentValue = true,
+            currentValue = false,
             flag = "AimShowFov",
             callback = function(v) GlobalState.Aim.ShowFOV = v end
         })
 
-        AimTab:CreateDivider({ line = false, spacing = 4 })
+        MiscTab:CreateDivider({ line = false, spacing = 4 })
 
-        AimTab:CreateSlider({
+        MiscTab:CreateSlider({
             name = "FOV Radius",
             range = {30, 600},
             increment = 5,
@@ -275,9 +269,9 @@ return function(Env, PassedKey)
             callback = function(v) GlobalState.Aim.FOV = v end
         })
 
-        AimTab:CreateDivider({ line = false, spacing = 2 })
+        MiscTab:CreateDivider({ line = false, spacing = 2 })
 
-        AimTab:CreateSlider({
+        MiscTab:CreateSlider({
             name = "Smoothness",
             range = {1, 100},
             increment = 1,
@@ -287,9 +281,9 @@ return function(Env, PassedKey)
             callback = function(v) GlobalState.Aim.Smooth = v end
         })
 
-        AimTab:CreateDivider({ line = false, spacing = 2 })
+        MiscTab:CreateDivider({ line = false, spacing = 2 })
 
-        AimTab:CreateSlider({
+        MiscTab:CreateSlider({
             name = "Max Distance",
             range = {50, 2000},
             increment = 10,
@@ -299,11 +293,9 @@ return function(Env, PassedKey)
             callback = function(v) GlobalState.Aim.MaxDist = v end
         })
 
-        AimTab:CreateDivider({ line = true, spacing = 6 })
-        AimTab:CreateSection({ name = "Target Selection", icon = GetIcon("SectionInfo.png") })
-        AimTab:CreateDivider({ line = false, spacing = 2 })
+        MiscTab:CreateDivider({ line = false, spacing = 4 })
 
-        AimTab:CreateDropdown({
+        MiscTab:CreateDropdown({
             name = "Target Mode",
             options = {"Single (Closest to Cursor)", "Multiple (All in FOV)"},
             currentOption = {"Single (Closest to Cursor)"},
@@ -314,9 +306,9 @@ return function(Env, PassedKey)
             end
         })
 
-        AimTab:CreateDivider({ line = false, spacing = 2 })
+        MiscTab:CreateDivider({ line = false, spacing = 2 })
 
-        AimTab:CreateDropdown({
+        MiscTab:CreateDropdown({
             name = "Hit Part",
             options = {"Head", "HumanoidRootPart", "UpperTorso"},
             currentOption = {"Head"},
@@ -327,9 +319,9 @@ return function(Env, PassedKey)
             end
         })
 
-        AimTab:CreateDivider({ line = false, spacing = 2 })
+        MiscTab:CreateDivider({ line = false, spacing = 2 })
 
-        AimTab:CreateDropdown({
+        MiscTab:CreateDropdown({
             name = "Activation",
             options = {"Hold RMB", "Always On", "Toggle Key (T)"},
             currentOption = {"Hold RMB"},
@@ -340,20 +332,18 @@ return function(Env, PassedKey)
             end
         })
 
-        AimTab:CreateDivider({ line = true, spacing = 6 })
-        AimTab:CreateSection({ name = "Extras", icon = GetIcon("SectionSafe.png") })
-        AimTab:CreateDivider({ line = false, spacing = 2 })
+        MiscTab:CreateDivider({ line = false, spacing = 4 })
 
-        AimTab:CreateToggle({
+        MiscTab:CreateToggle({
             name = "Visible Check (no walls)",
             currentValue = true,
             flag = "AimVisible",
             callback = function(v) GlobalState.Aim.VisibleOnly = v end
         })
 
-        AimTab:CreateDivider({ line = false, spacing = 2 })
+        MiscTab:CreateDivider({ line = false, spacing = 2 })
 
-        AimTab:CreateToggle({
+        MiscTab:CreateToggle({
             name = "Team Check",
             currentValue = true,
             flag = "AimTeam",
@@ -361,7 +351,147 @@ return function(Env, PassedKey)
         })
 
         -- ==========================================
-        -- ⚙️ ВКЛАДКА: SETTINGS
+        -- 🏃 MISCELLANEOUS — PLAYER MODIFICATIONS
+        -- ==========================================
+        MiscTab:CreateDivider({ line = true, spacing = 8 })
+        MiscTab:CreateSection({ name = "Player Modifications", icon = GetIcon("SectionSafe.png") })
+        MiscTab:CreateDivider({ line = false, spacing = 2 })
+
+        -- Walk Speed
+        MiscTab:CreateSlider({
+            name = "Walk Speed",
+            range = {16, 500},
+            increment = 1,
+            suffix = " spd",
+            currentValue = 16,
+            flag = "WalkSpeedVal",
+            callback = function(v) GlobalState.PlayerMods.Speed = v end
+        })
+
+        MiscTab:CreateDivider({ line = false, spacing = 2 })
+
+        MiscTab:CreateButton({
+            name = "Apply Walk Speed (Once)",
+            callback = function()
+                local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+                if hum then hum.WalkSpeed = GlobalState.PlayerMods.Speed end
+            end
+        })
+
+        MiscTab:CreateDivider({ line = false, spacing = 2 })
+
+        MiscTab:CreateToggle({
+            name = "Loop Walk Speed",
+            currentValue = false,
+            flag = "LoopSpeed",
+            callback = function(v) GlobalState.PlayerMods.LoopSpeed = v end
+        })
+
+        MiscTab:CreateDivider({ line = true, spacing = 6 })
+
+        -- Jump Power
+        MiscTab:CreateSlider({
+            name = "Jump Power",
+            range = {50, 500},
+            increment = 1,
+            suffix = " jmp",
+            currentValue = 50,
+            flag = "JumpPowerVal",
+            callback = function(v) GlobalState.PlayerMods.JumpPower = v end
+        })
+
+        MiscTab:CreateDivider({ line = false, spacing = 2 })
+
+        MiscTab:CreateButton({
+            name = "Apply Jump Power (Once)",
+            callback = function()
+                local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+                if hum then
+                    hum.UseJumpPower = true
+                    hum.JumpPower = GlobalState.PlayerMods.JumpPower
+                end
+            end
+        })
+
+        MiscTab:CreateDivider({ line = false, spacing = 2 })
+
+        MiscTab:CreateToggle({
+            name = "Loop Jump Power",
+            currentValue = false,
+            flag = "LoopJump",
+            callback = function(v) GlobalState.PlayerMods.LoopJump = v end
+        })
+
+        MiscTab:CreateDivider({ line = true, spacing = 6 })
+
+        -- Gravity
+        MiscTab:CreateSlider({
+            name = "Gravity",
+            range = {10, 500},
+            increment = 1,
+            suffix = " grav",
+            currentValue = 196,
+            flag = "GravityVal",
+            callback = function(v) GlobalState.PlayerMods.Gravity = v end
+        })
+
+        MiscTab:CreateDivider({ line = false, spacing = 2 })
+
+        MiscTab:CreateButton({
+            name = "Apply Gravity (Once)",
+            callback = function()
+                workspace.Gravity = GlobalState.PlayerMods.Gravity
+            end
+        })
+
+        MiscTab:CreateDivider({ line = false, spacing = 2 })
+
+        MiscTab:CreateToggle({
+            name = "Loop Gravity",
+            currentValue = false,
+            flag = "LoopGravity",
+            callback = function(v) GlobalState.PlayerMods.LoopGravity = v end
+        })
+
+        MiscTab:CreateDivider({ line = true, spacing = 6 })
+
+        -- Camera FOV
+        MiscTab:CreateSlider({
+            name = "Camera FOV",
+            range = {30, 120},
+            increment = 1,
+            suffix = " fov",
+            currentValue = 70,
+            flag = "CamFOVVal",
+            callback = function(v)
+                GlobalState.PlayerMods.TargetFOV = v
+                if not GlobalState.PlayerMods.SmoothFOV then
+                    Camera.FieldOfView = v
+                end
+            end
+        })
+
+        MiscTab:CreateDivider({ line = false, spacing = 2 })
+
+        MiscTab:CreateToggle({
+            name = "Smooth Camera FOV",
+            currentValue = true,
+            flag = "SmoothFOV",
+            callback = function(v) GlobalState.PlayerMods.SmoothFOV = v end
+        })
+
+        MiscTab:CreateDivider({ line = false, spacing = 2 })
+
+        MiscTab:CreateButton({
+            name = "Reset Camera FOV",
+            callback = function()
+                GlobalState.PlayerMods.TargetFOV = 70
+                Camera.FieldOfView = 70
+            end
+        })
+
+        -- ==========================================
+        -- ⚙️ SETTINGS
         -- ==========================================
         SettingsTab:CreateDivider({ line = true, spacing = 5 })
         SettingsTab:CreateSection({ name = "Ui Changer", icon = GetIcon("Settings.png") })
@@ -383,24 +513,20 @@ return function(Env, PassedKey)
                             })
                             task.wait(5)
 
-                            -- Очистка Drawing-объектов
                             for _, obj in pairs(GlobalState.Objects) do
                                 if obj.Tracer then obj.Tracer:Remove() end
                                 if obj.Text then obj.Text:Remove() end
                             end
                             if fovCircle then fovCircle:Remove() end
 
-                            -- Очистка Highlight
                             for _, v in pairs(CoreGui:GetChildren()) do
                                 if v.Name:match("^GlobalGlow_") then v:Destroy() end
                             end
 
-                            -- Отключение коннектов
                             for _, c in pairs(GlobalState.Connections) do
                                 pcall(function() c:Disconnect() end)
                             end
 
-                            -- Уничтожение UI
                             if Rayfield and Rayfield.Destroy then
                                 Rayfield:Destroy()
                             elseif Window and Window.Unload then
@@ -413,7 +539,7 @@ return function(Env, PassedKey)
         })
 
         -- ==========================================
-        -- 🧠 ДВИЖОК ОТРИСОВКИ (SMOOTH DRAWING API)
+        -- 🧠 ESP RENDER
         -- ==========================================
         local function GetESPObjects(player)
             if not GlobalState.Objects[player] then
@@ -497,6 +623,7 @@ return function(Env, PassedKey)
         end
 
         local aimConnection = RunService.RenderStepped:Connect(function()
+            -- FOV circle: только если тумблер включен
             if GlobalState.Aim.ShowFOV then
                 fovCircle.Visible = true
                 fovCircle.Radius = GlobalState.Aim.FOV
@@ -523,7 +650,7 @@ return function(Env, PassedKey)
             for _, plr in ipairs(Players:GetPlayers()) do
                 if plr ~= LocalPlayer then
                     if not (GlobalState.Aim.TeamCheck and plr.Team == LocalPlayer.Team) then
-                        local part, hum = getTargetPart(plr)
+                        local part = getTargetPart(plr)
                         if part then
                             local screenPos, onScreen = Camera:WorldToViewportPoint(part.Position)
                             if onScreen then
@@ -533,8 +660,7 @@ return function(Env, PassedKey)
                                     if isVisible(part) then
                                         table.insert(candidates, {
                                             part = part,
-                                            dist2D = dist2D,
-                                            screenPos = Vector2.new(screenPos.X, screenPos.Y)
+                                            dist2D = dist2D
                                         })
                                     end
                                 end
@@ -545,27 +671,52 @@ return function(Env, PassedKey)
             end
 
             if #candidates == 0 then return end
-
             table.sort(candidates, function(a, b) return a.dist2D < b.dist2D end)
 
+            local target
             if GlobalState.Aim.Mode == "Single (Closest to Cursor)" then
-                local chosen = candidates[1].part
-                local smooth = GlobalState.Aim.Smooth / 100
-                local targetCF = CFrame.new(Camera.CFrame.Position, chosen.Position)
-                Camera.CFrame = Camera.CFrame:Lerp(targetCF, 1 - smooth)
+                target = candidates[1].part.Position
             elseif GlobalState.Aim.Mode == "Multiple (All in FOV)" then
                 local sum = Vector3.new()
-                for _, c in ipairs(candidates) do
-                    sum = sum + c.part.Position
-                end
-                local avg = sum / #candidates
+                for _, c in ipairs(candidates) do sum = sum + c.part.Position end
+                target = sum / #candidates
+            end
+
+            if target then
                 local smooth = GlobalState.Aim.Smooth / 100
-                local targetCF = CFrame.new(Camera.CFrame.Position, avg)
+                local targetCF = CFrame.new(Camera.CFrame.Position, target)
                 Camera.CFrame = Camera.CFrame:Lerp(targetCF, 1 - smooth)
             end
         end)
 
         table.insert(GlobalState.Connections, aimConnection)
+
+        -- ==========================================
+        -- 🏃 PLAYER MODS LOOP + SMOOTH FOV
+        -- ==========================================
+        local playerModsConnection = RunService.Heartbeat:Connect(function(dt)
+            local char = LocalPlayer.Character
+            local hum = char and char:FindFirstChildOfClass("Humanoid")
+
+            if GlobalState.PlayerMods.LoopSpeed and hum then
+                hum.WalkSpeed = GlobalState.PlayerMods.Speed
+            end
+            if GlobalState.PlayerMods.LoopJump and hum then
+                hum.UseJumpPower = true
+                hum.JumpPower = GlobalState.PlayerMods.JumpPower
+            end
+            if GlobalState.PlayerMods.LoopGravity then
+                workspace.Gravity = GlobalState.PlayerMods.Gravity
+            end
+
+            -- Плавный переход FOV
+            if GlobalState.PlayerMods.SmoothFOV then
+                local target = GlobalState.PlayerMods.TargetFOV
+                Camera.FieldOfView = Camera.FieldOfView + (target - Camera.FieldOfView) * math.min(dt * 5, 1)
+            end
+        end)
+
+        table.insert(GlobalState.Connections, playerModsConnection)
 
         -- ==========================================
         -- 📊 ESP RENDER
@@ -589,9 +740,7 @@ return function(Env, PassedKey)
                         Vector, OnScreen = Camera:WorldToViewportPoint(hrp.Position)
                         HeadVector, _ = Camera:WorldToViewportPoint(head and head.Position or hrp.Position)
 
-                        if OnScreen then
-                            isVisible = true
-                        end
+                        if OnScreen then isVisible = true end
                     end
 
                     local targetAlpha = isVisible and 1 or 0

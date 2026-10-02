@@ -2,7 +2,7 @@
 -- [[ GLOBAL SCRIPTS DEVELOPMENT ]]
 -- Project: Universal Hub (Payload)
 -- Engine: Rayfield Gen 2
--- Version: 1.4.0 (Misc Aimbot + Player Mods)
+-- Version: 1.5.0 (Aimbot Fix + Spin + Anti-Anchor)
 -- ==============================================================================
 
 return function(Env, PassedKey)
@@ -19,47 +19,30 @@ return function(Env, PassedKey)
     local ExpectedKey = "Global-Scripts-2026-Gen2-2fhjg42cmb053nffas"
 
     if PassedKey ~= ExpectedKey then
-        LocalPlayer:Kick("\n[Global Scripts]\nInvalid Authentication Key.\nNice try, but you are not authorized.")
+        LocalPlayer:Kick("\n[Global Scripts]\nInvalid Authentication Key.")
         return
     end
 
     local GlobalState = {
         ESP = {
-            Master = false,
-            Tracers = false,
-            Style = "Health & Meters",
-            Glow = false,
+            Master = false, Tracers = false, Style = "Health & Meters", Glow = false,
             TracerColor = Color3.fromRGB(255, 255, 255),
             TextColor = Color3.fromRGB(255, 255, 255),
             GlowColor = Color3.fromRGB(0, 242, 254),
-            FadeSpeed = 0.1,
-            RainbowMode = false,
-            RainbowSpeed = 1
+            FadeSpeed = 0.1, RainbowMode = false, RainbowSpeed = 1
         },
         Aim = {
-            Enabled = false,
-            ShowFOV = false,     -- по умолчанию выключен
-            FOV = 120,
-            Smooth = 25,
-            MaxDist = 500,
-            Mode = "Single (Closest to Cursor)",
-            Part = "Head",
-            Activation = "Hold RMB",
-            VisibleOnly = true,
-            TeamCheck = true,
-            ToggleKey = false,
-            Holding = false
+            Enabled = false, ShowFOV = false, FOV = 120, Smooth = 25, MaxDist = 500,
+            Mode = "Single (Closest to Cursor)", Part = "Head",
+            Activation = "Hold RMB", VisibleOnly = true, TeamCheck = true,
+            ToggleKey = false, Holding = false
         },
         PlayerMods = {
-            Speed = 16,
-            JumpPower = 50,
-            Gravity = 196.2,
-            TargetFOV = 70,
-            LoopSpeed = false,
-            LoopJump = false,
-            LoopGravity = false,
-            SmoothFOV = true
+            Speed = 16, JumpPower = 50, Gravity = 196.2, TargetFOV = 70,
+            LoopSpeed = false, LoopJump = false, LoopGravity = false, SmoothFOV = true
         },
+        Spin = { Enabled = false, Speed = 180, AutoRotateStore = nil },
+        AntiAnchor = { Enabled = false },
         Connections = {},
         Objects = {}
     }
@@ -71,7 +54,6 @@ return function(Env, PassedKey)
     local function TheScript()
         local Window = Env.Window
         local GetIcon = Env.GetIcon
-
         local HomeTab = Env.TabHome
         local UpdatesTab = Env.TabUpdates
         local VisualTab = Env.TabVisual
@@ -84,46 +66,33 @@ return function(Env, PassedKey)
         HomeTab:CreateDivider({ line = true, spacing = 10 })
         HomeTab:CreateSection({ name = "User Information", icon = GetIcon("SectionInfo.png") })
         HomeTab:CreateDivider({ line = false, spacing = 2 })
-
         HomeTab:CreateText({
             name = "Profile: " .. LocalPlayer.Name,
             text = "Subscription Plan: Premium\nStatus: Authenticated & Secure.",
             icon = GetIcon("TextInfo.png")
         })
-
         HomeTab:CreateDivider({ line = true, spacing = 4 })
-
         HomeTab:CreateText({
             name = "System Info",
             text = "Executor: " .. executorName .. "\nCurrent Game: " .. gameName .. "\nPlace ID: " .. tostring(game.PlaceId),
             icon = GetIcon("TextSafe.png")
         })
-
         HomeTab:CreateDivider({ line = true, spacing = 6 })
-
         HomeTab:CreateSection({ name = "Quick Actions", icon = GetIcon("Teleport.png") })
         HomeTab:CreateDivider({ line = false, spacing = 2 })
-
         HomeTab:CreateButton({
             name = "Rejoin Current Server",
             callback = function()
                 TeleportService:TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
             end
         })
-
         HomeTab:CreateDivider({ line = false, spacing = 2 })
-
         HomeTab:CreateButton({
             name = "Copy Discord Invite",
             callback = function()
                 if setclipboard then
                     setclipboard("https://discord.gg/your_invite_code")
-                    Window:Notify({
-                        title = "Copied!",
-                        content = "Discord invite copied to clipboard.",
-                        duration = 3,
-                        icon = GetIcon("NotifyCheck.png")
-                    })
+                    Window:Notify({ title = "Copied!", content = "Discord invite copied.", duration = 3, icon = GetIcon("NotifyCheck.png") })
                 end
             end
         })
@@ -132,370 +101,187 @@ return function(Env, PassedKey)
         -- 🔔 UPDATES
         -- ==========================================
         UpdatesTab:CreateDivider({ line = true, spacing = 10 })
-        UpdatesTab:CreateSection({ name = "Latest Version: v1.4.0", icon = GetIcon("VersionToast.png") })
+        UpdatesTab:CreateSection({ name = "Latest Version: v1.5.0", icon = GetIcon("VersionToast.png") })
         UpdatesTab:CreateDivider({ line = false, spacing = 2 })
-
         UpdatesTab:CreateText({
             name = "Patch Notes",
-            text = "Aimbot moved to Miscellaneous\nFOV circle now respects its toggle\nPlayer Modifications (Speed / Jump / Gravity)\nSmooth Camera FOV transition",
+            text = "Aimbot now uses BindToRenderStep (fixed)\nAdded Spin Player with speed slider\nAdded Permanent Anti-Anchor (HRP/Torso)\nSmooth Camera FOV transition",
             icon = GetIcon("TextSafe.png")
         })
 
-        UpdatesTab:CreateDivider({ line = true, spacing = 6 })
-
-        UpdatesTab:CreateText({
-            name = "Upcoming Features",
-            text = "Server Hop (Low Ping Matchmaking)\nAutoFarm Categories\nConfig Saving System",
-            icon = GetIcon("TextWarning.png")
-        })
-
         -- ==========================================
-        -- 👁️ VISUAL (ESP)
+        -- 👁️ VISUAL
         -- ==========================================
         VisualTab:CreateDivider({ line = true, spacing = 10 })
         VisualTab:CreateSection({ name = "Main Settings", icon = GetIcon("Settings.png") })
         VisualTab:CreateDivider({ line = false, spacing = 2 })
-
-        VisualTab:CreateToggle({
-            name = "Master ESP Switch",
-            currentValue = false,
-            flag = "EspMaster",
-            callback = function(Value) GlobalState.ESP.Master = Value end
-        })
-
+        VisualTab:CreateToggle({ name = "Master ESP Switch", currentValue = false, flag = "EspMaster",
+            callback = function(v) GlobalState.ESP.Master = v end })
         VisualTab:CreateDivider({ line = false, spacing = 4 })
-
-        VisualTab:CreateToggle({
-            name = "Enable Tracers (Lines)",
-            currentValue = false,
-            flag = "EspTracers",
-            callback = function(Value) GlobalState.ESP.Tracers = Value end
-        })
-
+        VisualTab:CreateToggle({ name = "Enable Tracers (Lines)", currentValue = false, flag = "EspTracers",
+            callback = function(v) GlobalState.ESP.Tracers = v end })
         VisualTab:CreateDropdown({
             name = "ESP Information Style",
             options = {"Health & Meters", "Names Only", "Disabled"},
-            currentOption = {"Health & Meters"},
-            multipleOptions = false,
-            flag = "EspStyle",
-            callback = function(Option)
-                GlobalState.ESP.Style = type(Option) == "table" and Option[1] or Option
-            end
+            currentOption = {"Health & Meters"}, multipleOptions = false, flag = "EspStyle",
+            callback = function(o) GlobalState.ESP.Style = type(o) == "table" and o[1] or o end
         })
-
-        VisualTab:CreateToggle({
-            name = "Glowing Players (Chams)",
-            currentValue = false,
-            flag = "EspGlow",
-            callback = function(Value) GlobalState.ESP.Glow = Value end
-        })
-
+        VisualTab:CreateToggle({ name = "Glowing Players (Chams)", currentValue = false, flag = "EspGlow",
+            callback = function(v) GlobalState.ESP.Glow = v end })
         VisualTab:CreateDivider({ line = true, spacing = 6 })
         VisualTab:CreateSection({ name = "Colors & Rainbow", icon = GetIcon("Visual.png") })
         VisualTab:CreateDivider({ line = false, spacing = 2 })
-
-        VisualTab:CreateToggle({
-            name = "Enable Rainbow ESP",
-            currentValue = false,
-            flag = "EspRainbow",
-            callback = function(Value) GlobalState.ESP.RainbowMode = Value end
-        })
-
-        VisualTab:CreateSlider({
-            name = "Rainbow Speed",
-            range = {0.1, 5},
-            increment = 0.1,
-            suffix = "x",
-            currentValue = 1,
-            flag = "EspRainbowSpeed",
-            callback = function(Value) GlobalState.ESP.RainbowSpeed = Value end
-        })
-
+        VisualTab:CreateToggle({ name = "Enable Rainbow ESP", currentValue = false, flag = "EspRainbow",
+            callback = function(v) GlobalState.ESP.RainbowMode = v end })
+        VisualTab:CreateSlider({ name = "Rainbow Speed", range = {0.1, 5}, increment = 0.1, suffix = "x",
+            currentValue = 1, flag = "EspRainbowSpeed",
+            callback = function(v) GlobalState.ESP.RainbowSpeed = v end })
         VisualTab:CreateDivider({ line = false, spacing = 4 })
-
-        VisualTab:CreateColorPicker({
-            name = "Tracer Color",
-            color = GlobalState.ESP.TracerColor,
-            flag = "TracerColorPicker",
-            callback = function(color) GlobalState.ESP.TracerColor = color end
-        })
-
-        VisualTab:CreateColorPicker({
-            name = "Text Color",
-            color = GlobalState.ESP.TextColor,
-            flag = "TextColorPicker",
-            callback = function(color) GlobalState.ESP.TextColor = color end
-        })
-
-        VisualTab:CreateColorPicker({
-            name = "Glow Color",
-            color = GlobalState.ESP.GlowColor,
-            flag = "GlowColorPicker",
-            callback = function(color) GlobalState.ESP.GlowColor = color end
-        })
+        VisualTab:CreateColorPicker({ name = "Tracer Color", color = GlobalState.ESP.TracerColor, flag = "TracerColorPicker",
+            callback = function(c) GlobalState.ESP.TracerColor = c end })
+        VisualTab:CreateColorPicker({ name = "Text Color", color = GlobalState.ESP.TextColor, flag = "TextColorPicker",
+            callback = function(c) GlobalState.ESP.TextColor = c end })
+        VisualTab:CreateColorPicker({ name = "Glow Color", color = GlobalState.ESP.GlowColor, flag = "GlowColorPicker",
+            callback = function(c) GlobalState.ESP.GlowColor = c end })
 
         -- ==========================================
-        -- 🎯 MISCELLANEOUS — AIMBOT
+        -- 🎯 MISC — AIMBOT
         -- ==========================================
         MiscTab:CreateDivider({ line = true, spacing = 10 })
         MiscTab:CreateSection({ name = "Aimbot", icon = GetIcon("Aim.png") })
         MiscTab:CreateDivider({ line = false, spacing = 2 })
-
-        MiscTab:CreateToggle({
-            name = "Enable Aimbot",
-            currentValue = false,
-            flag = "AimEnabled",
-            callback = function(v) GlobalState.Aim.Enabled = v end
-        })
-
+        MiscTab:CreateToggle({ name = "Enable Aimbot", currentValue = false, flag = "AimEnabled",
+            callback = function(v) GlobalState.Aim.Enabled = v end })
         MiscTab:CreateDivider({ line = false, spacing = 2 })
-
-        MiscTab:CreateToggle({
-            name = "Show FOV Circle",
-            currentValue = false,
-            flag = "AimShowFov",
-            callback = function(v) GlobalState.Aim.ShowFOV = v end
-        })
-
+        MiscTab:CreateToggle({ name = "Show FOV Circle", currentValue = false, flag = "AimShowFov",
+            callback = function(v) GlobalState.Aim.ShowFOV = v end })
         MiscTab:CreateDivider({ line = false, spacing = 4 })
-
-        MiscTab:CreateSlider({
-            name = "FOV Radius",
-            range = {30, 600},
-            increment = 5,
-            suffix = "px",
-            currentValue = 120,
-            flag = "AimFov",
-            callback = function(v) GlobalState.Aim.FOV = v end
-        })
-
+        MiscTab:CreateSlider({ name = "FOV Radius", range = {30, 600}, increment = 5, suffix = "px",
+            currentValue = 120, flag = "AimFov",
+            callback = function(v) GlobalState.Aim.FOV = v end })
         MiscTab:CreateDivider({ line = false, spacing = 2 })
-
-        MiscTab:CreateSlider({
-            name = "Smoothness",
-            range = {1, 100},
-            increment = 1,
-            suffix = "%",
-            currentValue = 25,
-            flag = "AimSmooth",
-            callback = function(v) GlobalState.Aim.Smooth = v end
-        })
-
+        MiscTab:CreateSlider({ name = "Smoothness", range = {1, 100}, increment = 1, suffix = "%",
+            currentValue = 25, flag = "AimSmooth",
+            callback = function(v) GlobalState.Aim.Smooth = v end })
         MiscTab:CreateDivider({ line = false, spacing = 2 })
-
-        MiscTab:CreateSlider({
-            name = "Max Distance",
-            range = {50, 2000},
-            increment = 10,
-            suffix = "m",
-            currentValue = 500,
-            flag = "AimDist",
-            callback = function(v) GlobalState.Aim.MaxDist = v end
-        })
-
+        MiscTab:CreateSlider({ name = "Max Distance", range = {50, 2000}, increment = 10, suffix = "m",
+            currentValue = 500, flag = "AimDist",
+            callback = function(v) GlobalState.Aim.MaxDist = v end })
         MiscTab:CreateDivider({ line = false, spacing = 4 })
-
         MiscTab:CreateDropdown({
             name = "Target Mode",
             options = {"Single (Closest to Cursor)", "Multiple (All in FOV)"},
-            currentOption = {"Single (Closest to Cursor)"},
-            multipleOptions = false,
-            flag = "AimMode",
-            callback = function(opt)
-                GlobalState.Aim.Mode = type(opt) == "table" and opt[1] or opt
-            end
+            currentOption = {"Single (Closest to Cursor)"}, multipleOptions = false, flag = "AimMode",
+            callback = function(o) GlobalState.Aim.Mode = type(o) == "table" and o[1] or o end
         })
-
         MiscTab:CreateDivider({ line = false, spacing = 2 })
-
         MiscTab:CreateDropdown({
             name = "Hit Part",
             options = {"Head", "HumanoidRootPart", "UpperTorso"},
-            currentOption = {"Head"},
-            multipleOptions = false,
-            flag = "AimPart",
-            callback = function(opt)
-                GlobalState.Aim.Part = type(opt) == "table" and opt[1] or opt
-            end
+            currentOption = {"Head"}, multipleOptions = false, flag = "AimPart",
+            callback = function(o) GlobalState.Aim.Part = type(o) == "table" and o[1] or o end
         })
-
         MiscTab:CreateDivider({ line = false, spacing = 2 })
-
         MiscTab:CreateDropdown({
             name = "Activation",
             options = {"Hold RMB", "Always On", "Toggle Key (T)"},
-            currentOption = {"Hold RMB"},
-            multipleOptions = false,
-            flag = "AimActivate",
-            callback = function(opt)
-                GlobalState.Aim.Activation = type(opt) == "table" and opt[1] or opt
-            end
+            currentOption = {"Hold RMB"}, multipleOptions = false, flag = "AimActivate",
+            callback = function(o) GlobalState.Aim.Activation = type(o) == "table" and o[1] or o end
         })
+        MiscTab:CreateDivider({ line = false, spacing = 4 })
+        MiscTab:CreateToggle({ name = "Visible Check (no walls)", currentValue = true, flag = "AimVisible",
+            callback = function(v) GlobalState.Aim.VisibleOnly = v end })
+        MiscTab:CreateDivider({ line = false, spacing = 2 })
+        MiscTab:CreateToggle({ name = "Team Check", currentValue = true, flag = "AimTeam",
+            callback = function(v) GlobalState.Aim.TeamCheck = v end })
+
+        -- ==========================================
+        -- 🌀 MISC — SPIN PLAYER + ANTI-ANCHOR
+        -- ==========================================
+        MiscTab:CreateDivider({ line = true, spacing = 8 })
+        MiscTab:CreateSection({ name = "Movement Tricks", icon = GetIcon("SectionSafe.png") })
+        MiscTab:CreateDivider({ line = false, spacing = 2 })
+
+        MiscTab:CreateToggle({ name = "Spin Player", currentValue = false, flag = "SpinEnabled",
+            callback = function(v) GlobalState.Spin.Enabled = v end })
+        MiscTab:CreateDivider({ line = false, spacing = 2 })
+        MiscTab:CreateSlider({ name = "Spin Speed", range = {30, 2000}, increment = 10, suffix = " deg/s",
+            currentValue = 180, flag = "SpinSpeed",
+            callback = function(v) GlobalState.Spin.Speed = v end })
 
         MiscTab:CreateDivider({ line = false, spacing = 4 })
 
-        MiscTab:CreateToggle({
-            name = "Visible Check (no walls)",
-            currentValue = true,
-            flag = "AimVisible",
-            callback = function(v) GlobalState.Aim.VisibleOnly = v end
-        })
-
-        MiscTab:CreateDivider({ line = false, spacing = 2 })
-
-        MiscTab:CreateToggle({
-            name = "Team Check",
-            currentValue = true,
-            flag = "AimTeam",
-            callback = function(v) GlobalState.Aim.TeamCheck = v end
-        })
+        MiscTab:CreateToggle({ name = "Permanent Anti-Anchor (HRP/Torso)", currentValue = false, flag = "AntiAnchorEnabled",
+            callback = function(v) GlobalState.AntiAnchor.Enabled = v end })
 
         -- ==========================================
-        -- 🏃 MISCELLANEOUS — PLAYER MODIFICATIONS
+        -- 🏃 MISC — PLAYER MODIFICATIONS
         -- ==========================================
         MiscTab:CreateDivider({ line = true, spacing = 8 })
         MiscTab:CreateSection({ name = "Player Modifications", icon = GetIcon("SectionSafe.png") })
         MiscTab:CreateDivider({ line = false, spacing = 2 })
 
-        -- Walk Speed
-        MiscTab:CreateSlider({
-            name = "Walk Speed",
-            range = {16, 500},
-            increment = 1,
-            suffix = " spd",
-            currentValue = 16,
-            flag = "WalkSpeedVal",
-            callback = function(v) GlobalState.PlayerMods.Speed = v end
-        })
-
+        MiscTab:CreateSlider({ name = "Walk Speed", range = {16, 500}, increment = 1, suffix = " spd",
+            currentValue = 16, flag = "WalkSpeedVal",
+            callback = function(v) GlobalState.PlayerMods.Speed = v end })
         MiscTab:CreateDivider({ line = false, spacing = 2 })
-
-        MiscTab:CreateButton({
-            name = "Apply Walk Speed (Once)",
-            callback = function()
-                local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-                if hum then hum.WalkSpeed = GlobalState.PlayerMods.Speed end
-            end
-        })
-
+        MiscTab:CreateButton({ name = "Apply Walk Speed (Once)", callback = function()
+            local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if hum then hum.WalkSpeed = GlobalState.PlayerMods.Speed end
+        end })
         MiscTab:CreateDivider({ line = false, spacing = 2 })
-
-        MiscTab:CreateToggle({
-            name = "Loop Walk Speed",
-            currentValue = false,
-            flag = "LoopSpeed",
-            callback = function(v) GlobalState.PlayerMods.LoopSpeed = v end
-        })
+        MiscTab:CreateToggle({ name = "Loop Walk Speed", currentValue = false, flag = "LoopSpeed",
+            callback = function(v) GlobalState.PlayerMods.LoopSpeed = v end })
 
         MiscTab:CreateDivider({ line = true, spacing = 6 })
 
-        -- Jump Power
-        MiscTab:CreateSlider({
-            name = "Jump Power",
-            range = {50, 500},
-            increment = 1,
-            suffix = " jmp",
-            currentValue = 50,
-            flag = "JumpPowerVal",
-            callback = function(v) GlobalState.PlayerMods.JumpPower = v end
-        })
-
+        MiscTab:CreateSlider({ name = "Jump Power", range = {50, 500}, increment = 1, suffix = " jmp",
+            currentValue = 50, flag = "JumpPowerVal",
+            callback = function(v) GlobalState.PlayerMods.JumpPower = v end })
         MiscTab:CreateDivider({ line = false, spacing = 2 })
-
-        MiscTab:CreateButton({
-            name = "Apply Jump Power (Once)",
-            callback = function()
-                local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
-                if hum then
-                    hum.UseJumpPower = true
-                    hum.JumpPower = GlobalState.PlayerMods.JumpPower
-                end
-            end
-        })
-
+        MiscTab:CreateButton({ name = "Apply Jump Power (Once)", callback = function()
+            local hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+            if hum then hum.UseJumpPower = true; hum.JumpPower = GlobalState.PlayerMods.JumpPower end
+        end })
         MiscTab:CreateDivider({ line = false, spacing = 2 })
-
-        MiscTab:CreateToggle({
-            name = "Loop Jump Power",
-            currentValue = false,
-            flag = "LoopJump",
-            callback = function(v) GlobalState.PlayerMods.LoopJump = v end
-        })
+        MiscTab:CreateToggle({ name = "Loop Jump Power", currentValue = false, flag = "LoopJump",
+            callback = function(v) GlobalState.PlayerMods.LoopJump = v end })
 
         MiscTab:CreateDivider({ line = true, spacing = 6 })
 
-        -- Gravity
-        MiscTab:CreateSlider({
-            name = "Gravity",
-            range = {10, 500},
-            increment = 1,
-            suffix = " grav",
-            currentValue = 196,
-            flag = "GravityVal",
-            callback = function(v) GlobalState.PlayerMods.Gravity = v end
-        })
-
+        MiscTab:CreateSlider({ name = "Gravity", range = {10, 500}, increment = 1, suffix = " grav",
+            currentValue = 196, flag = "GravityVal",
+            callback = function(v) GlobalState.PlayerMods.Gravity = v end })
         MiscTab:CreateDivider({ line = false, spacing = 2 })
-
-        MiscTab:CreateButton({
-            name = "Apply Gravity (Once)",
-            callback = function()
-                workspace.Gravity = GlobalState.PlayerMods.Gravity
-            end
-        })
-
+        MiscTab:CreateButton({ name = "Apply Gravity (Once)", callback = function()
+            workspace.Gravity = GlobalState.PlayerMods.Gravity
+        end })
         MiscTab:CreateDivider({ line = false, spacing = 2 })
-
-        MiscTab:CreateToggle({
-            name = "Loop Gravity",
-            currentValue = false,
-            flag = "LoopGravity",
-            callback = function(v) GlobalState.PlayerMods.LoopGravity = v end
-        })
+        MiscTab:CreateToggle({ name = "Loop Gravity", currentValue = false, flag = "LoopGravity",
+            callback = function(v) GlobalState.PlayerMods.LoopGravity = v end })
 
         MiscTab:CreateDivider({ line = true, spacing = 6 })
 
-        -- Camera FOV
-        MiscTab:CreateSlider({
-            name = "Camera FOV",
-            range = {30, 120},
-            increment = 1,
-            suffix = " fov",
-            currentValue = 70,
-            flag = "CamFOVVal",
+        MiscTab:CreateSlider({ name = "Camera FOV", range = {30, 120}, increment = 1, suffix = " fov",
+            currentValue = 70, flag = "CamFOVVal",
             callback = function(v)
                 GlobalState.PlayerMods.TargetFOV = v
-                if not GlobalState.PlayerMods.SmoothFOV then
-                    Camera.FieldOfView = v
-                end
-            end
-        })
-
+                if not GlobalState.PlayerMods.SmoothFOV then Camera.FieldOfView = v end
+            end })
         MiscTab:CreateDivider({ line = false, spacing = 2 })
-
-        MiscTab:CreateToggle({
-            name = "Smooth Camera FOV",
-            currentValue = true,
-            flag = "SmoothFOV",
-            callback = function(v) GlobalState.PlayerMods.SmoothFOV = v end
-        })
-
+        MiscTab:CreateToggle({ name = "Smooth Camera FOV", currentValue = true, flag = "SmoothFOV",
+            callback = function(v) GlobalState.PlayerMods.SmoothFOV = v end })
         MiscTab:CreateDivider({ line = false, spacing = 2 })
-
-        MiscTab:CreateButton({
-            name = "Reset Camera FOV",
-            callback = function()
-                GlobalState.PlayerMods.TargetFOV = 70
-                Camera.FieldOfView = 70
-            end
-        })
+        MiscTab:CreateButton({ name = "Reset Camera FOV", callback = function()
+            GlobalState.PlayerMods.TargetFOV = 70
+            Camera.FieldOfView = 70
+        end })
 
         -- ==========================================
         -- ⚙️ SETTINGS
         -- ==========================================
         SettingsTab:CreateDivider({ line = true, spacing = 5 })
         SettingsTab:CreateSection({ name = "Ui Changer", icon = GetIcon("Settings.png") })
-
         SettingsTab:CreateButton({
             name = "Close Hub",
             callback = function()
@@ -505,12 +291,8 @@ return function(Env, PassedKey)
                     options = {
                         { text = "Cancel" },
                         { text = "Close", style = "danger", callback = function()
-                            Window:Notify({
-                                title = "Warning",
-                                content = "Hub will be closed after 5 seconds...",
-                                duration = 5,
-                                icon = GetIcon("NotifyError.png")
-                            })
+                            Window:Notify({ title = "Warning", content = "Hub will be closed after 5 seconds...",
+                                duration = 5, icon = GetIcon("NotifyError.png") })
                             task.wait(5)
 
                             for _, obj in pairs(GlobalState.Objects) do
@@ -518,11 +300,11 @@ return function(Env, PassedKey)
                                 if obj.Text then obj.Text:Remove() end
                             end
                             if fovCircle then fovCircle:Remove() end
+                            pcall(function() RunService:UnbindFromRenderStep("GlobalAimbotCam") end)
 
                             for _, v in pairs(CoreGui:GetChildren()) do
                                 if v.Name:match("^GlobalGlow_") then v:Destroy() end
                             end
-
                             for _, c in pairs(GlobalState.Connections) do
                                 pcall(function() c:Disconnect() end)
                             end
@@ -539,7 +321,7 @@ return function(Env, PassedKey)
         })
 
         -- ==========================================
-        -- 🧠 ESP RENDER
+        -- 🧠 ESP HELPERS
         -- ==========================================
         local function GetESPObjects(player)
             if not GlobalState.Objects[player] then
@@ -559,7 +341,6 @@ return function(Env, PassedKey)
         local function ManageGlow(player, character, targetAlpha, currentColor)
             local glowName = "GlobalGlow_" .. player.Name
             local glow = CoreGui:FindFirstChild(glowName)
-
             if targetAlpha > 0.01 then
                 if not glow then
                     glow = Instance.new("Highlight")
@@ -577,7 +358,7 @@ return function(Env, PassedKey)
         end
 
         -- ==========================================
-        -- 🎯 AIMBOT ENGINE
+        -- 🎯 AIMBOT ENGINE (BindToRenderStep — исправлено)
         -- ==========================================
         local fovCircle = Drawing.new("Circle")
         fovCircle.Thickness = 2
@@ -618,12 +399,12 @@ return function(Env, PassedKey)
             if not char then return nil end
             local hum = char:FindFirstChildOfClass("Humanoid")
             if not hum or hum.Health <= 0 then return nil end
-            local part = char:FindFirstChild(GlobalState.Aim.Part)
-            return part, hum
+            return char:FindFirstChild(GlobalState.Aim.Part), hum
         end
 
-        local aimConnection = RunService.RenderStepped:Connect(function()
-            -- FOV circle: только если тумблер включен
+        -- Высокоприоритетный апдейт камеры — идёт после стандартной камеры
+        RunService:BindToRenderStep("GlobalAimbotCam", Enum.RenderPriority.Camera.Value + 1, function(dt)
+            -- FOV circle
             if GlobalState.Aim.ShowFOV then
                 fovCircle.Visible = true
                 fovCircle.Radius = GlobalState.Aim.FOV
@@ -632,6 +413,7 @@ return function(Env, PassedKey)
                 fovCircle.Visible = false
             end
 
+            -- Активация
             local active = false
             if GlobalState.Aim.Enabled then
                 if GlobalState.Aim.Activation == "Hold RMB" then
@@ -658,10 +440,7 @@ return function(Env, PassedKey)
                                 local dist3D = (Camera.CFrame.Position - part.Position).Magnitude
                                 if dist2D <= GlobalState.Aim.FOV and dist3D <= GlobalState.Aim.MaxDist then
                                     if isVisible(part) then
-                                        table.insert(candidates, {
-                                            part = part,
-                                            dist2D = dist2D
-                                        })
+                                        table.insert(candidates, { part = part, dist2D = dist2D })
                                     end
                                 end
                             end
@@ -669,7 +448,6 @@ return function(Env, PassedKey)
                     end
                 end
             end
-
             if #candidates == 0 then return end
             table.sort(candidates, function(a, b) return a.dist2D < b.dist2D end)
 
@@ -689,18 +467,36 @@ return function(Env, PassedKey)
             end
         end)
 
-        table.insert(GlobalState.Connections, aimConnection)
-
         -- ==========================================
-        -- 🏃 PLAYER MODS LOOP + SMOOTH FOV
+        -- 🌀 SPIN + ANTI-ANCHOR + PLAYER MODS + SMOOTH FOV
         -- ==========================================
-        local playerModsConnection = RunService.Heartbeat:Connect(function(dt)
+        local modsConnection = RunService.Heartbeat:Connect(function(dt)
             local char = LocalPlayer.Character
             local hum = char and char:FindFirstChildOfClass("Humanoid")
+            local hrp = char and char:FindFirstChild("HumanoidRootPart")
 
-            if GlobalState.PlayerMods.LoopSpeed and hum then
-                hum.WalkSpeed = GlobalState.PlayerMods.Speed
+            -- Spin Player
+            if GlobalState.Spin.Enabled and hum and hrp then
+                if GlobalState.Spin.AutoRotateStore == nil then
+                    GlobalState.Spin.AutoRotateStore = hum.AutoRotate
+                end
+                hum.AutoRotate = false
+                hrp.CFrame = hrp.CFrame * CFrame.Angles(0, math.rad(GlobalState.Spin.Speed) * dt, 0)
+            elseif not GlobalState.Spin.Enabled and GlobalState.Spin.AutoRotateStore ~= nil then
+                if hum then hum.AutoRotate = GlobalState.Spin.AutoRotateStore end
+                GlobalState.Spin.AutoRotateStore = nil
             end
+
+            -- Anti-Anchor
+            if GlobalState.AntiAnchor.Enabled and char then
+                local torso = char:FindFirstChild("UpperTorso") or char:FindFirstChild("Torso")
+                local root = char:FindFirstChild("HumanoidRootPart")
+                if root and root.Anchored then root.Anchored = false end
+                if torso and torso.Anchored then torso.Anchored = false end
+            end
+
+            -- Player Mods
+            if GlobalState.PlayerMods.LoopSpeed and hum then hum.WalkSpeed = GlobalState.PlayerMods.Speed end
             if GlobalState.PlayerMods.LoopJump and hum then
                 hum.UseJumpPower = true
                 hum.JumpPower = GlobalState.PlayerMods.JumpPower
@@ -709,14 +505,14 @@ return function(Env, PassedKey)
                 workspace.Gravity = GlobalState.PlayerMods.Gravity
             end
 
-            -- Плавный переход FOV
+            -- Smooth Camera FOV
             if GlobalState.PlayerMods.SmoothFOV then
                 local target = GlobalState.PlayerMods.TargetFOV
                 Camera.FieldOfView = Camera.FieldOfView + (target - Camera.FieldOfView) * math.min(dt * 5, 1)
             end
         end)
 
-        table.insert(GlobalState.Connections, playerModsConnection)
+        table.insert(GlobalState.Connections, modsConnection)
 
         -- ==========================================
         -- 📊 ESP RENDER
@@ -728,18 +524,15 @@ return function(Env, PassedKey)
                 if player ~= LocalPlayer then
                     local objs = GetESPObjects(player)
                     local character = player.Character
-
                     local isVisible = false
                     local Vector, HeadVector
 
                     if GlobalState.ESP.Master and character and character:FindFirstChild("HumanoidRootPart") and character:FindFirstChild("Humanoid") and character.Humanoid.Health > 0 then
                         local hrp = character.HumanoidRootPart
                         local head = character:FindFirstChild("Head")
-
                         local OnScreen
                         Vector, OnScreen = Camera:WorldToViewportPoint(hrp.Position)
                         HeadVector, _ = Camera:WorldToViewportPoint(head and head.Position or hrp.Position)
-
                         if OnScreen then isVisible = true end
                     end
 
@@ -802,6 +595,19 @@ return function(Env, PassedKey)
         end)
 
         table.insert(GlobalState.Connections, playerRemovingConnection)
+
+        -- При смене персонажа — переприменяем loop-моды
+        LocalPlayer.CharacterAdded:Connect(function()
+            task.wait(0.5)
+            if GlobalState.PlayerMods.LoopSpeed then
+                local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+                if hum then hum.WalkSpeed = GlobalState.PlayerMods.Speed end
+            end
+            if GlobalState.PlayerMods.LoopJump then
+                local hum = LocalPlayer.Character:FindFirstChildOfClass("Humanoid")
+                if hum then hum.UseJumpPower = true; hum.JumpPower = GlobalState.PlayerMods.JumpPower end
+            end
+        end)
     end
 
     TheScript()

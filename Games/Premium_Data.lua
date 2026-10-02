@@ -5,6 +5,7 @@ return function(Env, PassedKey)
     local Players = game:GetService("Players")
     local RunService = game:GetService("RunService")
     local CoreGui = game:GetService("CoreGui")
+    local TweenService = game:GetService("TweenService")
     local MarketplaceService = game:GetService("MarketplaceService")
     
     local LocalPlayer = Players.LocalPlayer
@@ -24,10 +25,14 @@ return function(Env, PassedKey)
         Master = false,
         Tracers = false,
         Style = "Health & Meters", 
-        Glow = false
+        Glow = false,
+        -- Цвета по умолчанию
+        TracerColor = Color3.fromRGB(255, 255, 255),
+        TextColor = Color3.fromRGB(255, 255, 255),
+        GlowColor = Color3.fromRGB(0, 242, 254),
+        FadeSpeed = 0.1 -- Скорость плавного появления (чем меньше, тем медленнее)
     }
 
-    -- Таблица для хранения объектов отрисовки, чтобы они не засоряли память
     local ESP_Objects = {}
 
     local executorName = type(identifyexecutor) == "function" and identifyexecutor() or "Unknown Executor"
@@ -44,19 +49,26 @@ return function(Env, PassedKey)
         -- ==========================================
         -- 🏠 ВКЛАДКА: HOME
         -- ==========================================
+        HomeTab:CreateDivider({ line = true, spacing = 10 })
         HomeTab:CreateSection("User Information")
+        HomeTab:CreateDivider({ line = false, spacing = 5 })
         
         HomeTab:CreateText({
             name = "👤 Profile: " .. LocalPlayer.Name,
-            text = "Subscription Plan: Free\nStatus: Authenticated & Secure."
+            text = "Subscription Plan: Premium\nStatus: Authenticated & Secure."
         })
+        
+        HomeTab:CreateDivider({ line = true, spacing = 10 })
         
         HomeTab:CreateText({
             name = "💻 System Info",
             text = "Executor: " .. executorName .. "\nCurrent Game: " .. gameName .. "\nPlace ID: " .. tostring(game.PlaceId)
         })
 
+        HomeTab:CreateDivider({ line = true, spacing = 15 })
+
         HomeTab:CreateSection("Quick Actions")
+        HomeTab:CreateDivider({ line = false, spacing = 5 })
         
         HomeTab:CreateButton({
             name = "Rejoin Current Server",
@@ -64,6 +76,8 @@ return function(Env, PassedKey)
                 game:GetService("TeleportService"):TeleportToPlaceInstance(game.PlaceId, game.JobId, LocalPlayer)
             end
         })
+
+        HomeTab:CreateDivider({ line = false, spacing = 5 })
 
         HomeTab:CreateButton({
             name = "Copy Discord Invite",
@@ -78,22 +92,21 @@ return function(Env, PassedKey)
         -- ==========================================
         -- 🔔 ВКЛАДКА: UPDATES
         -- ==========================================
-        UpdatesTab:CreateSection("Latest Version: v1.0.0")
+        UpdatesTab:CreateDivider({ line = true, spacing = 10 })
+        UpdatesTab:CreateSection("Latest Version: v1.1.0")
+        UpdatesTab:CreateDivider({ line = false, spacing = 5 })
 
         UpdatesTab:CreateText({
             name = "Patch Notes - October 2026",
-            text = "✔️ Added Liquid Node Visuals (Drawing API)\n✔️ Added Handshake Key Authentication\n✔️ Improved Server Rejoin logic\n✔️ Patched memory leaks in ESP RenderStepped"
-        })
-
-        UpdatesTab:CreateText({
-            name = "Upcoming Features",
-            text = "🔜 Server Hop (Low Ping Matchmaking)\n🔜 Aimbot & FOV Circle\n🔜 Custom Hitboxes"
+            text = "✔️ Added Liquid Node Visuals (Drawing API)\n✔️ Added Smooth Fade In/Out for ESP\n✔️ Added Color Pickers for ESP Customization\n✔️ Handshake Key Authentication implemented"
         })
 
         -- ==========================================
         -- 👁️ ВКЛАДКА: VISUAL (ESP)
         -- ==========================================
+        VisualTab:CreateDivider({ line = true, spacing = 10 })
         VisualTab:CreateSection("Main Settings")
+        VisualTab:CreateDivider({ line = false, spacing = 5 })
 
         VisualTab:CreateToggle({
             name = "Master ESP Switch",
@@ -101,18 +114,10 @@ return function(Env, PassedKey)
             flag = "EspMaster",
             callback = function(Value)
                 ESPSettings.Master = Value
-                -- Если выключили, очищаем всё с экрана
-                if not Value then
-                    for _, obj in pairs(ESP_Objects) do
-                        if obj.Tracer then obj.Tracer.Visible = false end
-                        if obj.Text then obj.Text.Visible = false end
-                    end
-                    for _, v in pairs(CoreGui:GetChildren()) do
-                        if v.Name:match("^GlobalGlow_") then v:Destroy() end
-                    end
-                end
             end
         })
+
+        VisualTab:CreateDivider({ line = false, spacing = 5 })
 
         VisualTab:CreateToggle({
             name = "Enable Tracers (Lines)",
@@ -122,6 +127,17 @@ return function(Env, PassedKey)
                 ESPSettings.Tracers = Value
             end
         })
+
+        VisualTab:CreateColorPicker({
+            name = "Tracer Color",
+            color = ESPSettings.TracerColor,
+            flag = "TracerColorPicker",
+            callback = function(color, alpha)
+                ESPSettings.TracerColor = color
+            end
+        })
+
+        VisualTab:CreateDivider({ line = true, spacing = 10 })
 
         VisualTab:CreateDropdown({
             name = "ESP Information Style",
@@ -134,7 +150,18 @@ return function(Env, PassedKey)
             end
         })
 
+        VisualTab:CreateColorPicker({
+            name = "Text Color",
+            color = ESPSettings.TextColor,
+            flag = "TextColorPicker",
+            callback = function(color, alpha)
+                ESPSettings.TextColor = color
+            end
+        })
+
+        VisualTab:CreateDivider({ line = true, spacing = 15 })
         VisualTab:CreateSection("Effects")
+        VisualTab:CreateDivider({ line = false, spacing = 5 })
 
         VisualTab:CreateToggle({
             name = "Glowing Players (Chams)",
@@ -142,111 +169,138 @@ return function(Env, PassedKey)
             flag = "EspGlow",
             callback = function(Value)
                 ESPSettings.Glow = Value
-                if not Value then
-                    for _, v in pairs(CoreGui:GetChildren()) do
-                        if v.Name:match("^GlobalGlow_") then v:Destroy() end
-                    end
-                end
+            end
+        })
+
+        VisualTab:CreateColorPicker({
+            name = "Glow Color",
+            color = ESPSettings.GlowColor,
+            flag = "GlowColorPicker",
+            callback = function(color, alpha)
+                ESPSettings.GlowColor = color
             end
         })
 
         -- ==========================================
-        -- ⚙️ ДВИЖОК ОТРИСОВКИ (DRAWING API)
+        -- ⚙️ ДВИЖОК ОТРИСОВКИ (SMOOTH DRAWING API)
         -- ==========================================
         
         local function GetESPObjects(player)
             if not ESP_Objects[player] then
                 ESP_Objects[player] = {
                     Tracer = Drawing.new("Line"),
-                    Text = Drawing.new("Text")
+                    Text = Drawing.new("Text"),
+                    Alpha = 0 -- Текущая прозрачность (0 - невидимый, 1 - полностью видимый)
                 }
                 ESP_Objects[player].Tracer.Thickness = 1.5
-                ESP_Objects[player].Tracer.Color = Color3.fromRGB(255, 255, 255)
-                ESP_Objects[player].Tracer.Transparency = 0.8
-                
                 ESP_Objects[player].Text.Size = 16
                 ESP_Objects[player].Text.Center = true
                 ESP_Objects[player].Text.Outline = true
-                ESP_Objects[player].Text.Color = Color3.fromRGB(0, 255, 255)
             end
             return ESP_Objects[player]
         end
 
-        local function ManageGlow(player, character)
+        local function ManageGlow(player, character, targetAlpha)
             local glowName = "GlobalGlow_" .. player.Name
             local glow = CoreGui:FindFirstChild(glowName)
 
-            if ESPSettings.Glow and ESPSettings.Master then
+            if targetAlpha > 0.01 then
                 if not glow then
                     glow = Instance.new("Highlight")
                     glow.Name = glowName
-                    glow.FillColor = Color3.fromRGB(0, 242, 254)
-                    glow.OutlineColor = Color3.fromRGB(255, 255, 255)
-                    glow.FillTransparency = 0.5
-                    glow.OutlineTransparency = 0.1
                     glow.Parent = CoreGui
                 end
                 glow.Adornee = character
+                glow.FillColor = ESPSettings.GlowColor
+                glow.OutlineColor = Color3.fromRGB(255, 255, 255)
+                
+                -- Плавное изменение прозрачности свечения
+                glow.FillTransparency = 1 - (0.5 * targetAlpha)
+                glow.OutlineTransparency = 1 - (0.9 * targetAlpha)
             else
                 if glow then glow:Destroy() end
             end
         end
 
+        -- Цикл рендера (Работает со скоростью FPS)
         RunService.RenderStepped:Connect(function()
             for _, player in pairs(Players:GetPlayers()) do
                 if player ~= LocalPlayer then
                     local objs = GetESPObjects(player)
                     local character = player.Character
+                    
+                    local isVisible = false
+                    local Vector, HeadVector
 
+                    -- Проверяем, должен ли ESP рендериться для этого игрока
                     if ESPSettings.Master and character and character:FindFirstChild("HumanoidRootPart") and character:FindFirstChild("Humanoid") and character.Humanoid.Health > 0 then
                         local hrp = character.HumanoidRootPart
-                        local hum = character.Humanoid
                         local head = character:FindFirstChild("Head")
-
-                        local Vector, OnScreen = Camera:WorldToViewportPoint(hrp.Position)
-                        local HeadVector, HeadOnScreen = Camera:WorldToViewportPoint(head and head.Position or hrp.Position)
-
-                        ManageGlow(player, character)
-
+                        
+                        local OnScreen
+                        Vector, OnScreen = Camera:WorldToViewportPoint(hrp.Position)
+                        HeadVector, _ = Camera:WorldToViewportPoint(head and head.Position or hrp.Position)
+                        
                         if OnScreen then
-                            if ESPSettings.Tracers then
-                                objs.Tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
-                                objs.Tracer.To = Vector2.new(Vector.X, Vector.Y)
-                                objs.Tracer.Visible = true
-                            else
-                                objs.Tracer.Visible = false
-                            end
+                            isVisible = true
+                        end
+                    end
 
-                            if ESPSettings.Style ~= "Disabled" then
-                                local dist = math.floor((Camera.CFrame.Position - hrp.Position).Magnitude)
-                                
-                                if ESPSettings.Style == "Health & Meters" then
-                                    local hp = math.floor(hum.Health)
-                                    objs.Text.Text = string.format("%s [%d HP] [%dm]", player.Name, hp, dist)
-                                    objs.Text.Color = Color3.fromRGB(255 - (hp * 2.55), hp * 2.55, 0)
-                                elseif ESPSettings.Style == "Names Only" then
-                                    objs.Text.Text = player.Name
-                                    objs.Text.Color = Color3.fromRGB(255, 255, 255)
-                                end
+                    -- Математика плавности (Lerping Alpha)
+                    local targetAlpha = isVisible and 1 or 0
+                    objs.Alpha = objs.Alpha + (targetAlpha - objs.Alpha) * ESPSettings.FadeSpeed
 
-                                objs.Text.Position = Vector2.new(HeadVector.X, HeadVector.Y - 25)
-                                objs.Text.Visible = true
-                            else
-                                objs.Text.Visible = false
-                            end
+                    -- Отрисовка Glow
+                    local glowTargetAlpha = (ESPSettings.Glow and ESPSettings.Master and character and character:FindFirstChild("Humanoid") and character.Humanoid.Health > 0) and 1 or 0
+                    ManageGlow(player, character, glowTargetAlpha)
+
+                    -- Если Alpha больше 0.01, значит объекты видно (хотя бы тускло)
+                    if objs.Alpha > 0.01 and Vector and HeadVector then
+                        
+                        -- ТРЕЙСЕРЫ
+                        if ESPSettings.Tracers then
+                            objs.Tracer.From = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y)
+                            objs.Tracer.To = Vector2.new(Vector.X, Vector.Y)
+                            objs.Tracer.Color = ESPSettings.TracerColor
+                            objs.Tracer.Transparency = objs.Alpha * 0.8 -- Максимальная прозрачность 0.8
+                            objs.Tracer.Visible = true
                         else
                             objs.Tracer.Visible = false
+                        end
+
+                        -- ТЕКСТ
+                        if ESPSettings.Style ~= "Disabled" then
+                            local hum = character:FindFirstChild("Humanoid")
+                            local hrp = character:FindFirstChild("HumanoidRootPart")
+                            local dist = math.floor((Camera.CFrame.Position - hrp.Position).Magnitude)
+                            
+                            if ESPSettings.Style == "Health & Meters" and hum then
+                                local hp = math.floor(hum.Health)
+                                objs.Text.Text = string.format("%s [%d HP] [%dm]", player.Name, hp, dist)
+                                -- Смешиваем цвет здоровья с выбранным базовым цветом текста (если захочешь, можно оставить только цвет ХП)
+                                objs.Text.Color = Color3.fromRGB(255 - (hp * 2.55), hp * 2.55, 0)
+                            elseif ESPSettings.Style == "Names Only" then
+                                objs.Text.Text = player.Name
+                                objs.Text.Color = ESPSettings.TextColor
+                            end
+
+                            objs.Text.Position = Vector2.new(HeadVector.X, HeadVector.Y - 25)
+                            objs.Text.Transparency = objs.Alpha
+                            objs.Text.Visible = true
+                        else
                             objs.Text.Visible = false
                         end
+                        
                     else
+                        -- Если Alpha упала до нуля, отключаем рендер для оптимизации
                         objs.Tracer.Visible = false
                         objs.Text.Visible = false
-                        ManageGlow(player, nil)
                     end
                 end
             end
         end)
 
+        -- Очистка кэша игроков, которые вышли (Убирает краши)
         Players.PlayerRemoving:Connect(function(player)
             if ESP_Objects[player] then
                 ESP_Objects[player].Tracer:Remove()

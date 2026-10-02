@@ -2,7 +2,7 @@
 -- [[ GLOBAL SCRIPTS DEVELOPMENT ]]
 -- Project: Universal Hub (Payload)
 -- Engine: Rayfield Gen 2
--- Version: 1.2.0 (Stable)
+-- Version: 1.2.1 (UI Polish & Safe Unload)
 -- ==============================================================================
 
 return function(Env, PassedKey)
@@ -49,7 +49,7 @@ return function(Env, PassedKey)
     -- [[ 5. ЯДРО ИНТЕРФЕЙСА ]]
     local function TheScript()
         local Window = Env.Window
-        local GetIcon = Env.GetIcon -- Получаем функцию кастомных иконок из Лоадера
+        local GetIcon = Env.GetIcon
         
         local HomeTab = Env.TabHome
         local UpdatesTab = Env.TabUpdates
@@ -64,7 +64,7 @@ return function(Env, PassedKey)
         HomeTab:CreateDivider({ line = false, spacing = 2 })
         
         HomeTab:CreateText({
-            name = "👤 Profile: " .. LocalPlayer.Name,
+            name = "Profile: " .. LocalPlayer.Name,
             text = "Subscription Plan: Premium\nStatus: Authenticated & Secure.",
             icon = GetIcon("TextInfo.png")
         })
@@ -72,7 +72,7 @@ return function(Env, PassedKey)
         HomeTab:CreateDivider({ line = true, spacing = 4 })
         
         HomeTab:CreateText({
-            name = "💻 System Info",
+            name = "System Info",
             text = "Executor: " .. executorName .. "\nCurrent Game: " .. gameName .. "\nPlace ID: " .. tostring(game.PlaceId),
             icon = GetIcon("TextSafe.png")
         })
@@ -110,12 +110,12 @@ return function(Env, PassedKey)
         -- 🔔 ВКЛАДКА: UPDATES
         -- ==========================================
         UpdatesTab:CreateDivider({ line = true, spacing = 10 })
-        UpdatesTab:CreateSection({ name = "Latest Version: v1.2.0", icon = GetIcon("VersionToast.png") })
+        UpdatesTab:CreateSection({ name = "Latest Version: v1.2.1", icon = GetIcon("VersionToast.png") })
         UpdatesTab:CreateDivider({ line = false, spacing = 2 })
 
         UpdatesTab:CreateText({
             name = "Patch Notes - October 2026",
-            text = "✔️ Implemented Custom Local Asset Manager\n✔️ Added Script Unload & UI Keybinds\n✔️ Added Rainbow ESP with Speed Slider\n✔️ Reduced UI Spacing for a cleaner look",
+            text = "Added Safe UI Unload Sequence\nRemoved text emojis in favor of custom PNGs\nImplemented Custom Local Asset Manager\nAdded Rainbow ESP with Speed Slider",
             icon = GetIcon("TextSafe.png")
         })
 
@@ -123,7 +123,7 @@ return function(Env, PassedKey)
 
         UpdatesTab:CreateText({
             name = "Upcoming Features",
-            text = "🔜 Server Hop (Low Ping Matchmaking)\n🔜 Aimbot & FOV Circle\n🔜 AutoFarm Categories",
+            text = "Server Hop (Low Ping Matchmaking)\nAutoFarm Categories\nConfig Saving System",
             icon = GetIcon("TextWarning.png")
         })
 
@@ -229,46 +229,53 @@ return function(Env, PassedKey)
         })
 
         -- ==========================================
-        -- ⚙️ ВКЛАДКА: SETTINGS
+        -- ⚙️ ВКЛАДКА: SETTINGS (ИЗМЕНЕНО)
         -- ==========================================
-        SettingsTab:CreateDivider({ line = true, spacing = 10 })
-        SettingsTab:CreateSection({ name = "Menu Configuration", icon = GetIcon("Settings.png") })
-        SettingsTab:CreateDivider({ line = false, spacing = 2 })
-
-        SettingsTab:CreateKeybind({
-            name = "Toggle Menu UI",
-            currentKeybind = "RightShift",
-            holdToInteract = false,
-            flag = "UIToggleBind",
-            callback = function(Keybind)
-                -- Rayfield handles toggle automatically if bound
-            end
-        })
-
-        SettingsTab:CreateDivider({ line = true, spacing = 10 })
-        SettingsTab:CreateSection({ name = "Script Management", icon = GetIcon("SectionWarning.png") })
-        SettingsTab:CreateDivider({ line = false, spacing = 2 })
-
+        SettingsTab:CreateDivider({ line = true, spacing = 5 })
+        SettingsTab:CreateSection({ name = "Ui Changer", icon = GetIcon("Settings.png") }) -- Используем иконку настроек или другую подходящую
+        
         SettingsTab:CreateButton({
-            name = "⚠️ Unload Script",
+            name = "Close Hub",
             callback = function()
-                for _, obj in pairs(GlobalState.Objects) do
-                    if obj.Tracer then obj.Tracer:Remove() end
-                    if obj.Text then obj.Text:Remove() end
-                end
-                for _, v in pairs(CoreGui:GetChildren()) do
-                    if v.Name:match("^GlobalGlow_") then v:Destroy() end
-                end
-                for _, connection in pairs(GlobalState.Connections) do
-                    connection:Disconnect()
-                end
-                Env.Window:Notify({
-                    title = "Unloaded", 
-                    content = "Global Scripts has been safely unloaded.", 
-                    duration = 3, 
-                    icon = GetIcon("NotifyCheck.png")
+                Window:Popup({
+                    title = "Are you sure to close hub?",
+                    content = "This will close the hub and stop all functions.",
+                    options = {
+                        { text = "Cancel" },
+                        { text = "Close", style = "danger", callback = function()
+                            Window:Notify({
+                                title = "Warning",
+                                content = "Hub will be closed after 5 seconds...",
+                                duration = 5,
+                            })
+                            
+                            -- Запускаем выгрузку в отдельном потоке, чтобы не морозить UI
+                            task.spawn(function()
+                                task.wait(5)
+                                
+                                -- Очистка Drawing API
+                                for _, obj in pairs(GlobalState.Objects) do
+                                    if obj.Tracer then obj.Tracer:Remove() end
+                                    if obj.Text then obj.Text:Remove() end
+                                end
+                                
+                                -- Очистка Highlights
+                                for _, v in pairs(CoreGui:GetChildren()) do
+                                    if v.Name:match("^GlobalGlow_") then v:Destroy() end
+                                end
+                                
+                                -- Отключение соединений
+                                for _, connection in pairs(GlobalState.Connections) do
+                                    connection:Disconnect()
+                                end
+                                
+                                -- Полное уничтожение меню
+                                Rayfield:Destroy()
+                            end)
+                        end },
+                    },
                 })
-            end
+            end,
         })
 
         -- ==========================================

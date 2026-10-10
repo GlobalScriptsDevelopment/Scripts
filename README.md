@@ -23,6 +23,4 @@ Welcome to **Global Scripts**. Here you will find a multitude of scripts and muc
 If you want to configure something, request a specific script, or just explore further, please read my main GitHub profile and repository:
 **[Explore GlobalScriptsDevelopment](https://github.com/GlobalScriptsDevelopment/Scripts)**
 
----
-*Liquid Black & White Edition*
 </div>

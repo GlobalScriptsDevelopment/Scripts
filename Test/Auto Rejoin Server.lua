@@ -1,5 +1,7 @@
--- НАСТРОЙКИ
-local WAIT_TIME = 60        -- Время ожидания в секундах (10 минут)
+
+loadstring(game:HttpGet("https://raw.githubusercontent.com/gumanba/Scripts/main/EvadeEvent"))()
+print(" Активирован фарм вещей")
+local WAIT_TIME = 300       -- Время ожидания в секундах (10 минут)
 local PLACE_ID = game.PlaceId -- Идентификатор текущей игры
 local CURSOR_COLOR = Color3.fromRGB(255, 0, 0) -- Цвет курсора (сейчас красный)
 local CURSOR_SIZE = 15       -- Размер курсора в пикселях
